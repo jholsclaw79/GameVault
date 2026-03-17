@@ -9,7 +9,7 @@ jobs:
     runs-on: unraid
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-    if: github.event.ref_type == 'branch' && github.event.ref != 'main'
+    if: ${{ github.event.pull_request.head.ref != 'main' }}
 
     steps:
       - name: Delete Docker Hub Tag
