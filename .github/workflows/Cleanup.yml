@@ -1,0 +1,19 @@
+name: Delete tags from DockerHub
+
+on:
+  delete:
+    branches: [ "**" ]
+
+jobs:
+  delete-tag:
+    runs-on: self-hosted
+    if: github.event.ref_type == 'branch' && github.event.ref != 'main'
+
+    steps:
+      - name: Delete Docker Hub Tag
+        uses: xhofe/del-docker-tag@v1
+        with:
+          repository: ${{ secrets.DOCKERHUB_USERNAME }}/gamevault
+          tag: ${{ github.event.ref }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
