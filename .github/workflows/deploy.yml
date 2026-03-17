@@ -6,7 +6,6 @@ on:
 
 jobs:
   build-and-push:
-    # This MUST match the label of your self-hosted runner
     runs-on: unraid
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -25,7 +24,6 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: .
-          # Ensure this points to your specific Dockerfile if it's not in the root
           file: ./Dockerfile
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/gamevault:${{ github.ref_name }}
