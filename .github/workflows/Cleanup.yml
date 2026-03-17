@@ -1,12 +1,14 @@
 name: Delete tags from DockerHub
 
 on:
-  delete:
-    branches: [ "**" ]
+  pull_request:
+    types: [closed]
 
 jobs:
   delete-tag:
     runs-on: unraid
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     if: github.event.ref_type == 'branch' && github.event.ref != 'main'
 
     steps:
@@ -15,4 +17,4 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/gamevault:${{ github.ref_name }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/gamevault:${{ github.event.pull_request.head.ref }}
