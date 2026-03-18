@@ -4,9 +4,12 @@ namespace GameVault.Components.Layout;
 
 public partial class MainLayout
 {
-    bool _drawerOpen = true;
+    private bool _drawerOpen = true;
 
-    void DrawerToggle() => _drawerOpen = !_drawerOpen;
+    private void DrawerToggle()
+    { 
+        _drawerOpen = !_drawerOpen;
+    }
 
     private MudTheme _draculaTheme = new MudTheme()
     {
@@ -21,7 +24,8 @@ public partial class MainLayout
             DrawerText = "#f8f8f2",
             TextPrimary = "#f8f8f2",     // FG
             ActionDefault = "#8be9fd",   // Cyan icons
-            Info = "#8be9fd"
+            Info = "#8be9fd",
+            Success = "#50fa7b"
         }
     };
 }
