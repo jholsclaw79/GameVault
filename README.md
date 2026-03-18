@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="wwwroot/images/logo.png" alt="GameVault Logo" width="200">
+</p>
+
 # GameVault
 
 A self-hosted web-based application to keep track of your physical and digital video game library.
@@ -6,7 +10,7 @@ This project is for my Software Capstone Class
 
 ---
 
-### Docker Setup
+## Docker Setup
 Replace the placeholders with your actual credentials and paths.
 
 ```bash
@@ -22,3 +26,10 @@ docker run -d \
   -e MYSQL_PORT="3306" \
   -e MYSQL_DB_NAME="app_database" \
   jholsclaw79/gamevault:main
+```
+
+## Made With
+* .Net 10
+* MudBlazor
+* Dracula Theme
+* Docker

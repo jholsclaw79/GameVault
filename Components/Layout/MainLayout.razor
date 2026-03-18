@@ -1,23 +1,30 @@
 ﻿@inherits LayoutComponentBase
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu/>
-    </div>
+<MudThemeProvider Theme="_draculaTheme" IsDarkMode="true" />
+<MudDialogProvider />
+<MudSnackbarProvider />
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
+<MudLayout>
+    <MudHidden Breakpoint="Breakpoint.MdAndUp">
+        <MudAppBar Elevation="1">
+            <MudIconButton Icon="@Icons.Material.Filled.Menu" 
+                           Color="Color.Secondary" 
+                           Edge="Edge.Start" 
+                           OnClick="@DrawerToggle" />
+            <MudText Typo="Typo.h6" Class="ml-3">GameVault</MudText>
+        </MudAppBar>
+    </MudHidden>
+    
+    <MudDrawer @bind-Open="_drawerOpen" 
+               Elevation="2" 
+               Breakpoint="Breakpoint.Md" 
+               Variant="@DrawerVariant.Responsive">
+        <NavMenu />
+    </MudDrawer>
 
-        <article class="content px-4">
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pt-6 px-8">
             @Body
-        </article>
-    </main>
-</div>
-
-<div id="blazor-error-ui" data-nosnippet>
-    An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
-    <span class="dismiss">🗙</span>
-</div>
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>

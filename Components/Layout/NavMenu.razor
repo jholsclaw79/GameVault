@@ -1,29 +1,20 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">GameVault</a>
-    </div>
-</div>
+﻿<MudNavMenu Color="Color.Success" Bordered="true">
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler"/>
+    <MudLink Href="/" Class="d-flex align-center mud-text-secondary" Style="padding-top:5px;">
+        <img src="images/logo.png" alt="GameVault" style="height: 50px; cursor: pointer;"/>
+    </MudLink>
 
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="nav flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
-    </nav>
-</div>
+    <MudDivider Class="my-2"/>
+    
+    <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">
+        Home
+    </MudNavLink>
+    
+    <MudNavLink Href="counter" Icon="@Icons.Material.Filled.Add">
+        Counter
+    </MudNavLink>
+    
+    <MudNavLink Href="weather" Icon="@Icons.Material.Filled.Cloud">
+        Weather
+    </MudNavLink>
+</MudNavMenu>
