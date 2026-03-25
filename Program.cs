@@ -19,6 +19,9 @@ builder.Services
     .AddRazorComponents()
     .AddInteractiveServerComponents();
 
+// Register StartupStateService as singleton
+builder.Services.AddSingleton(StartupStateService.Instance);
+
 // Force mysql to use version 8.  Actual check is done in the AppDbContext file
 builder.Services.AddDbContextFactory<AppDbContext>(options =>
     options.UseMySql(mySqlConnectionString, new MySqlServerVersion(new Version(8,0,0))));
@@ -26,10 +29,22 @@ builder.Services.AddDbContextFactory<AppDbContext>(options =>
 builder.Services
     .AddScoped<DbHealthService>();
 
-
-
-
 var app = builder.Build();
+
+// Initialize database and check startup health
+try
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await db.Database.MigrateAsync();
+    StartupStateService.Instance.IsInitialized = true;
+}
+catch (Exception e)
+{
+    Console.WriteLine(e);
+    StartupStateService.Instance.IsInitialized = true;
+    StartupStateService.Instance.LockedOutBy = LockoutType.MySql;
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

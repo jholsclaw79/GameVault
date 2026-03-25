@@ -14,26 +14,6 @@ public partial class MainLayout
         _drawerOpen = !_drawerOpen;
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            _isDbConnected = await DbHealth.CanConnectAsync();
-            _hasCheckedConnection = true;
-
-            if (_isDbConnected)
-            {
-                await JS.InvokeVoidAsync("console.log", "NETWORK_TRACE: MySQL Connection established successfully.");
-            }
-            else
-            {
-                await JS.InvokeVoidAsync("console.error", "NETWORK_TRACE: MySQL Connection FAILED. Check server logs.");
-            }
-            
-            StateHasChanged();
-        }
-    }
-
     private readonly MudTheme _draculaTheme = new MudTheme()
     {
         PaletteDark = new PaletteDark()

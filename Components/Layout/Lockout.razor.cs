@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using GameVault.Data;
 
 namespace GameVault.Components.Layout;
 
@@ -13,11 +14,4 @@ public partial class Lockout : ComponentBase
         LockoutType.RetroAchievements => "GameVault is unable to authenticate with the RetroAchievement API.\nPlease check your API Keys.",
         _ => "Unknown connection failure"
     };
-}
-
-public enum LockoutType
-{
-    MySql,
-    IGDB,
-    RetroAchievements
 }

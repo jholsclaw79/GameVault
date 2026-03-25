@@ -6,8 +6,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 {
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        if (!optionsBuilder.IsConfigured) return;
-        var connectionString = Database.GetConnectionString();
+        // Only configure if not already configured by DI
+        if (optionsBuilder.IsConfigured) return;
+        
+        var connectionString = Environment.GetEnvironmentVariable("MYSQL_CONNECTION_STRING");
+        if (string.IsNullOrEmpty(connectionString)) return;
+        
         try 
         {
             var detectedVersion = ServerVersion.AutoDetect(connectionString);

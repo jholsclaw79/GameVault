@@ -1,17 +1,16 @@
 ﻿@inherits LayoutComponentBase
 @inject IJSRuntime JS
-@using GameVault.Data 
-@inject DbHealthService DbHealth
+@using GameVault.Data
 
 <MudThemeProvider Theme="_draculaTheme" IsDarkMode="true" />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
-@if (_hasCheckedConnection && !_isDbConnected)
+@if (StartupStateService.Instance.IsInitialized && StartupStateService.Instance.LockedOutBy.HasValue)
 {
-    <Lockout Type="LockoutType.MySql"/>
+    <Lockout Type="StartupStateService.Instance.LockedOutBy.Value"/>
 }
-else if (!_hasCheckedConnection)
+else if (!StartupStateService.Instance.IsInitialized)
 {
     <MudContainer Class="d-flex align-center justify-center" Style="height: 100vh;">
         <MudProgressCircular Color="Color.Secondary" Indeterminate="true" Size="Size.Large" />
