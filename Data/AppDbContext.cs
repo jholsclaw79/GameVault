@@ -1,9 +1,26 @@
+using GameVault.Data.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace GameVault.Data;
 
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
+    
+    public DbSet<GVPlatformType> PlatformTypes { get; set; }
+
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+        
+        // Configure PlatformType
+        modelBuilder.Entity<GVPlatformType>()
+            .HasKey(p => p.Id);
+
+        modelBuilder.Entity<GVPlatformType>()
+            .HasIndex(p => p.IGDBId)
+            .IsUnique();
+    }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         // Only configure if not already configured by DI

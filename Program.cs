@@ -1,5 +1,6 @@
 using GameVault.Components;
 using GameVault.Data;
+using GameVault.Data.IGDB;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
 
@@ -24,8 +25,11 @@ builder.Services
 // Register StartupStateService as singleton
 builder.Services.AddSingleton(StartupStateService.Instance);
 
-// Register Health Checks
-builder.Services.AddScoped<IGDBService>();
+// Register Services
+builder.Services
+    .AddScoped<IGDBService>()
+    .AddScoped<IGDBSyncService>()
+    .AddScoped<IGDBPlatformTypeService>();
 
 // Force mysql to use version 8.  Actual check is done in the AppDbContext file
 builder.Services.AddDbContextFactory<AppDbContext>(options => options.UseMySql(mySqlConnectionString, new MySqlServerVersion(new Version(8,0,0))));
