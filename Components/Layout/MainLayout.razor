@@ -1,30 +1,39 @@
 ﻿@inherits LayoutComponentBase
+@inject IJSRuntime JS
+@using GameVault.Data
 
 <MudThemeProvider Theme="_draculaTheme" IsDarkMode="true" />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
-<MudLayout>
-    <MudHidden Breakpoint="Breakpoint.MdAndUp">
-        <MudAppBar Elevation="1">
-            <MudIconButton Icon="@Icons.Material.Filled.Menu" 
-                           Color="Color.Secondary" 
-                           Edge="Edge.Start" 
-                           OnClick="@DrawerToggle" />
-            <MudText Typo="Typo.h6" Class="ml-3">GameVault</MudText>
-        </MudAppBar>
-    </MudHidden>
-    
-    <MudDrawer @bind-Open="_drawerOpen" 
-               Elevation="2" 
-               Breakpoint="Breakpoint.Md" 
-               Variant="@DrawerVariant.Responsive">
-        <NavMenu />
-    </MudDrawer>
+@if (StartupStateService.Instance.IsInitialized && StartupStateService.Instance.LockedOutBy.HasValue)
+{
+    <Lockout Type="StartupStateService.Instance.LockedOutBy.Value"/>
+}
+else if (!StartupStateService.Instance.IsInitialized)
+{
+    <MudContainer Class="d-flex align-center justify-center" Style="height: 100vh;">
+        <MudProgressCircular Color="Color.Secondary" Indeterminate="true" Size="Size.Large" />
+    </MudContainer>
+}
+else
+{
+    <MudLayout>
+        <MudHidden Breakpoint="Breakpoint.MdAndUp">
+            <MudAppBar Elevation="1">
+                <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Secondary" Edge="Edge.Start" OnClick="@DrawerToggle" />
+                <MudText Typo="Typo.h6" Class="ml-3">GameVault</MudText>
+            </MudAppBar>
+        </MudHidden>
+        
+        <MudDrawer @bind-Open="_drawerOpen" Elevation="2" Breakpoint="Breakpoint.Md" Variant="@DrawerVariant.Responsive">
+            <NavMenu />
+        </MudDrawer>
 
-    <MudMainContent>
-        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pt-6 px-8">
-            @Body
-        </MudContainer>
-    </MudMainContent>
-</MudLayout>
+        <MudMainContent>
+            <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pt-6 px-8">
+                @Body
+            </MudContainer>
+        </MudMainContent>
+    </MudLayout>
+}
