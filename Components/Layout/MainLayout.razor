@@ -1,5 +1,4 @@
 ﻿@inherits LayoutComponentBase
-@using Microsoft.JSInterop
 @inject IJSRuntime JS
 @using GameVault.Data 
 @inject DbHealthService DbHealth
@@ -10,31 +9,16 @@
 
 @if (_hasCheckedConnection && !_isDbConnected)
 {
-    @* FULL SCREEN LOCKOUT *@
-    <MudContainer MaxWidth="MaxWidth.Small" Class="d-flex align-center justify-center" Style="height: 100vh;">
-        <MudPaper Elevation="9" Class="pa-10 text-center" Style="border: 2px solid var(--mud-palette-error);">
-            <MudIcon Icon="@Icons.Material.Filled.Dns" Color="Color.Error" Size="Size.Large" Class="mb-4" />
-            <MudText Typo="Typo.h4" Color="Color.Error" GutterBottom="true">Connection Failed</MudText>
-            <MudText Typo="Typo.body1" Class="mb-6">
-                GameVault is unable to reach the MySQL database. 
-                Please check your server status or environment credentials.
-            </MudText>
-            <MudText Typo="Typo.caption" Style="opacity: 0.6;">
-                Redeploy the Docker instance with the correct MySQL credentials to continue
-            </MudText>
-        </MudPaper>
-    </MudContainer>
+    <Lockout Type="LockoutType.MySql"/>
 }
 else if (!_hasCheckedConnection)
 {
-    @* INITIAL LOADING STATE *@
     <MudContainer Class="d-flex align-center justify-center" Style="height: 100vh;">
         <MudProgressCircular Color="Color.Secondary" Indeterminate="true" Size="Size.Large" />
     </MudContainer>
 }
 else
 {
-    @* NORMAL APP - Only renders if DB is connected *@
     <MudLayout>
         <MudHidden Breakpoint="Breakpoint.MdAndUp">
             <MudAppBar Elevation="1">

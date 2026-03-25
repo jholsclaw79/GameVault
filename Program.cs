@@ -3,7 +3,7 @@ using GameVault.Data;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
 
-// Get MySQl Enviroment Variables
+// Get MySQl Environment Variables
 string mySqlUsername = Environment.GetEnvironmentVariable("MYSQL_USER") ?? string.Empty;
 string mySqlPassword = Environment.GetEnvironmentVariable("MYSQL_PASSWORD") ?? string.Empty;
 string mySqlHost = Environment.GetEnvironmentVariable("MYSQL_URL") ?? string.Empty;

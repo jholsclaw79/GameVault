@@ -1,0 +1,13 @@
+@* FULL SCREEN LOCKOUT *@
+<MudContainer MaxWidth="MaxWidth.Small" Class="d-flex align-center justify-center" Style="height: 100vh;">
+    <MudPaper Elevation="9" Class="pa-10 text-center" Style="border: 2px solid var(--mud-palette-error);">
+        <MudIcon Icon="@Icons.Material.Filled.Dns" Color="Color.Error" Size="Size.Large" Class="mb-4" />
+        <MudText Typo="Typo.h4" Color="Color.Error" GutterBottom="true">Connection Failed</MudText>
+        <MudText Typo="Typo.body1" Class="mb-6">
+            @Message
+        </MudText>
+        <MudText Typo="Typo.caption" Style="opacity: 0.6;">
+            Redeploy the Docker instance with the correct @Type.ToString() credentials to continue
+        </MudText>
+    </MudPaper>
+</MudContainer>
