@@ -1,0 +1,50 @@
+@using GameVault.Data.IGDB
+@inject IGDBPlatformTypeService PlatformTypeService
+
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="2">
+        @if (!SyncComplete)
+        {
+            <MudIcon Icon="@Icons.Material.Filled.Sync" Color="Color.Info" Size="Size.Large" Class="mb-4" />
+            <MudText Typo="Typo.h5" GutterBottom="true">Syncing Data</MudText>
+
+            <MudProgressLinear Value="Progress" Class="my-4" />
+
+            <div Class="mt-6">
+                @foreach (var item in SyncItems)
+                {
+                    <div Class="d-flex align-center justify-space-between my-2">
+                        <MudText Typo="Typo.body2">@item.Name</MudText>
+                        @if (item.Status == SyncStatus.InProgress)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                        }
+                        else if (item.Status == SyncStatus.Completed)
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" />
+                        }
+                        else if (item.Status == SyncStatus.Failed)
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Small" />
+                        }
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Large" Class="mb-4" />
+            <MudText Typo="Typo.h5" Color="Color.Success" GutterBottom="true">Sync Complete</MudText>
+            <MudText Typo="Typo.body1" Class="mb-6">
+                @SyncSummary
+            </MudText>
+        }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Success" Disabled="@(!SyncComplete)" OnClick="Close">
+            Done
+        </MudButton>
+    </DialogActions>
+</MudDialog>

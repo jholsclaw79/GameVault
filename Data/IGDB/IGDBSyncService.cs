@@ -36,8 +36,7 @@ public class IGDBSyncService(IDbContextFactory<AppDbContext> dbContextFactory, I
 
             while (true)
             {
-                string query = $"{baseQuery} offset {offset}";
-
+                string query = $"{baseQuery}; offset {offset};";
                 TIGDBModel[]? igdbModels = await client.QueryAsync<TIGDBModel>(igdbEndpoint, query);
 
                 if (igdbModels == null || !igdbModels.Any())
