@@ -34,6 +34,8 @@ public partial class SyncModal : ComponentBase
             new SyncItem { Name = "Platform Types" },
             new SyncItem { Name = "Platform Families" },
             new SyncItem { Name = "Platform Logos" },
+            new SyncItem { Name = "Platform Versions" },
+            new SyncItem { Name = "Platform Version Release Dates" },
             new SyncItem { Name = "Platforms" }
         ];
     }
@@ -90,11 +92,11 @@ public partial class SyncModal : ComponentBase
                 failedCount++;
             }
 
-            // Sync Platforms
+            // Sync Platform Versions
             await UpdateSyncStatus(3, SyncStatus.InProgress);
-            bool platformTableSuccess = await PlatformService.SyncPlatformsAsync();
+            bool platformVersionSuccess = await PlatformVersionService.SyncPlatformVersionsAsync();
 
-            if (platformTableSuccess)
+            if (platformVersionSuccess)
             {
                 await UpdateSyncStatus(3, SyncStatus.Completed);
                 completedCount++;
@@ -102,6 +104,36 @@ public partial class SyncModal : ComponentBase
             else
             {
                 await UpdateSyncStatus(3, SyncStatus.Failed);
+                failedCount++;
+            }
+
+            // Sync Platform Version Release Dates
+            await UpdateSyncStatus(4, SyncStatus.InProgress);
+            bool platformVersionReleaseDateSuccess = await PlatformVersionReleaseDateService.SyncPlatformVersionReleaseDatesAsync();
+
+            if (platformVersionReleaseDateSuccess)
+            {
+                await UpdateSyncStatus(4, SyncStatus.Completed);
+                completedCount++;
+            }
+            else
+            {
+                await UpdateSyncStatus(4, SyncStatus.Failed);
+                failedCount++;
+            }
+
+            // Sync Platforms
+            await UpdateSyncStatus(5, SyncStatus.InProgress);
+            bool platformTableSuccess = await PlatformService.SyncPlatformsAsync();
+
+            if (platformTableSuccess)
+            {
+                await UpdateSyncStatus(5, SyncStatus.Completed);
+                completedCount++;
+            }
+            else
+            {
+                await UpdateSyncStatus(5, SyncStatus.Failed);
                 failedCount++;
             }
 
