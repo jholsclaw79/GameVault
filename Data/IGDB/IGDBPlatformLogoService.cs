@@ -10,7 +10,7 @@ public class IGDBPlatformLogoService(IGDBSyncService syncService)
     {
         return await syncService.SyncAsync<PlatformLogo, GVPlatformLogo>(
             IGDBClient.Endpoints.PlatformLogos,
-            "fields id,image_id,url; limit 500",
+            "fields id,checksum,alpha_channel,animated,height,width,image_id,url; limit 500",
             MapToGVPlatformLogo,
             context => context.PlatformLogos,
             igdbPlatformLogo => igdbPlatformLogo.Id ?? 0
@@ -26,6 +26,11 @@ public class IGDBPlatformLogoService(IGDBSyncService syncService)
         {
             IGDBId = igdbPlatformLogo.Id ?? 0,
             Name = imageId == "unknown" ? $"platform-logo-{igdbPlatformLogo.Id ?? 0}" : imageId,
+            Checksum = igdbPlatformLogo.Checksum,
+            AlphaChannel = igdbPlatformLogo.AlphaChannel,
+            Animated = igdbPlatformLogo.Animated,
+            Height = igdbPlatformLogo.Height,
+            Width = igdbPlatformLogo.Width,
             ImageId = imageId,
             Url = url,
             CreatedAt = DateTime.UtcNow,

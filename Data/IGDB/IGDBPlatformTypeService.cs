@@ -10,7 +10,7 @@ public class IGDBPlatformTypeService(IGDBSyncService syncService)
     {
         return await syncService.SyncAsync<PlatformType, GVPlatformType>(
             IGDBClient.Endpoints.PlatformTypes,
-            "fields id,name,created_at,updated_at; limit 500",
+            "fields id,name,checksum,created_at,updated_at; limit 500",
             MapToGVPlatformType,
             context => context.PlatformTypes,
             igdbPlatform => igdbPlatform.Id ?? 0
@@ -23,6 +23,7 @@ public class IGDBPlatformTypeService(IGDBSyncService syncService)
         {
             IGDBId = igdbPlatform.Id ?? 0,
             Name = igdbPlatform.Name ?? "Unknown",
+            Checksum = igdbPlatform.Checksum,
             CreatedAt = igdbPlatform.CreatedAt?.UtcDateTime ?? DateTime.UtcNow,
             UpdatedAt = igdbPlatform.UpdatedAt?.UtcDateTime ?? DateTime.UtcNow
         };

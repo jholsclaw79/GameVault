@@ -4,6 +4,7 @@ using GameVault.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GameVault.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260327000941_AddPlatforms")]
+    partial class AddPlatforms
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -30,20 +33,8 @@ namespace GameVault.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
 
-                    b.Property<string>("Abbreviation")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("AlternativeName")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Checksum")
-                        .HasColumnType("longtext");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
-
-                    b.Property<int?>("Generation")
-                        .HasColumnType("int");
 
                     b.Property<long>("IGDBId")
                         .HasColumnType("bigint");
@@ -52,43 +43,13 @@ namespace GameVault.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<long?>("PlatformFamilyIGDBId")
-                        .HasColumnType("bigint");
-
-                    b.Property<long?>("PlatformLogoIGDBId")
-                        .HasColumnType("bigint");
-
-                    b.Property<long?>("PlatformTypeIGDBId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("Slug")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Summary")
-                        .HasColumnType("longtext");
-
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)");
-
-                    b.Property<string>("Url")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("VersionsIdsJson")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("WebsitesIdsJson")
-                        .HasColumnType("longtext");
 
                     b.HasKey("Id");
 
                     b.HasIndex("IGDBId")
                         .IsUnique();
-
-                    b.HasIndex("PlatformFamilyIGDBId");
-
-                    b.HasIndex("PlatformLogoIGDBId");
-
-                    b.HasIndex("PlatformTypeIGDBId");
 
                     b.ToTable("Platforms");
                 });
@@ -101,9 +62,6 @@ namespace GameVault.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
 
-                    b.Property<string>("Checksum")
-                        .HasColumnType("longtext");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
@@ -112,9 +70,6 @@ namespace GameVault.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Slug")
                         .HasColumnType("longtext");
 
                     b.Property<DateTime>("UpdatedAt")
@@ -136,20 +91,8 @@ namespace GameVault.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
 
-                    b.Property<bool?>("AlphaChannel")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<bool?>("Animated")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<string>("Checksum")
-                        .HasColumnType("longtext");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
-
-                    b.Property<int?>("Height")
-                        .HasColumnType("int");
 
                     b.Property<long>("IGDBId")
                         .HasColumnType("bigint");
@@ -169,9 +112,6 @@ namespace GameVault.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<int?>("Width")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.HasIndex("IGDBId")
@@ -187,9 +127,6 @@ namespace GameVault.Migrations
                         .HasColumnType("bigint");
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<string>("Checksum")
-                        .HasColumnType("longtext");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
@@ -210,33 +147,6 @@ namespace GameVault.Migrations
                         .IsUnique();
 
                     b.ToTable("PlatformTypes");
-                });
-
-            modelBuilder.Entity("GameVault.Data.Models.GVPlatform", b =>
-                {
-                    b.HasOne("GameVault.Data.Models.GVPlatformFamily", "PlatformFamily")
-                        .WithMany()
-                        .HasForeignKey("PlatformFamilyIGDBId")
-                        .HasPrincipalKey("IGDBId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("GameVault.Data.Models.GVPlatformLogo", "PlatformLogo")
-                        .WithMany()
-                        .HasForeignKey("PlatformLogoIGDBId")
-                        .HasPrincipalKey("IGDBId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("GameVault.Data.Models.GVPlatformType", "PlatformType")
-                        .WithMany()
-                        .HasForeignKey("PlatformTypeIGDBId")
-                        .HasPrincipalKey("IGDBId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("PlatformFamily");
-
-                    b.Navigation("PlatformLogo");
-
-                    b.Navigation("PlatformType");
                 });
 #pragma warning restore 612, 618
         }

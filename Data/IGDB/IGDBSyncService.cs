@@ -5,6 +5,7 @@ namespace GameVault.Data.IGDB;
 
 public interface IIGDBSyncable
 {
+    long Id { get; set; }
     long IGDBId { get; set; }
     string Name { get; set; }
     DateTime UpdatedAt { get; set; }
@@ -52,8 +53,8 @@ public class IGDBSyncService(IDbContextFactory<AppDbContext> dbContextFactory, I
                     if (existingModel != null)
                     {
                         TGVModel updatedModel = mapToGVModel(igdbModel);
-                        existingModel.Name = updatedModel.Name;
-                        existingModel.UpdatedAt = updatedModel.UpdatedAt;
+                        updatedModel.Id = existingModel.Id;
+                        context.Entry(existingModel).CurrentValues.SetValues(updatedModel);
                         context.Update(existingModel);
                     }
                     else

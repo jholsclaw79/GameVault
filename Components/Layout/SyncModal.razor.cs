@@ -33,7 +33,8 @@ public partial class SyncModal : ComponentBase
         {
             new() { Name = "Platform Types" },
             new() { Name = "Platform Families" },
-            new() { Name = "Platform Logos" }
+            new() { Name = "Platform Logos" },
+            new() { Name = "Platforms" }
         };
     }
 
@@ -86,6 +87,21 @@ public partial class SyncModal : ComponentBase
             else
             {
                 await UpdateSyncStatus(2, SyncStatus.Failed);
+                failedCount++;
+            }
+
+            // Sync Platforms
+            await UpdateSyncStatus(3, SyncStatus.InProgress);
+            bool platformTableSuccess = await PlatformService.SyncPlatformsAsync();
+
+            if (platformTableSuccess)
+            {
+                await UpdateSyncStatus(3, SyncStatus.Completed);
+                completedCount++;
+            }
+            else
+            {
+                await UpdateSyncStatus(3, SyncStatus.Failed);
                 failedCount++;
             }
 

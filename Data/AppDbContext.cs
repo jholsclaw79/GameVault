@@ -9,6 +9,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<GVPlatformType> PlatformTypes { get; set; }
     public DbSet<GVPlatformFamily> PlatformFamilies { get; set; }
     public DbSet<GVPlatformLogo> PlatformLogos { get; set; }
+    public DbSet<GVPlatform> Platforms { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -38,6 +39,44 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<GVPlatformLogo>()
             .HasIndex(p => p.IGDBId)
             .IsUnique();
+
+        // Configure Platform
+        modelBuilder.Entity<GVPlatform>()
+            .HasKey(p => p.Id);
+
+        modelBuilder.Entity<GVPlatform>()
+            .HasIndex(p => p.IGDBId)
+            .IsUnique();
+
+        modelBuilder.Entity<GVPlatform>()
+            .HasIndex(p => p.PlatformFamilyIGDBId);
+
+        modelBuilder.Entity<GVPlatform>()
+            .HasIndex(p => p.PlatformLogoIGDBId);
+
+        modelBuilder.Entity<GVPlatform>()
+            .HasIndex(p => p.PlatformTypeIGDBId);
+
+        modelBuilder.Entity<GVPlatform>()
+            .HasOne(p => p.PlatformFamily)
+            .WithMany()
+            .HasPrincipalKey(f => f.IGDBId)
+            .HasForeignKey(p => p.PlatformFamilyIGDBId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<GVPlatform>()
+            .HasOne(p => p.PlatformLogo)
+            .WithMany()
+            .HasPrincipalKey(l => l.IGDBId)
+            .HasForeignKey(p => p.PlatformLogoIGDBId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<GVPlatform>()
+            .HasOne(p => p.PlatformType)
+            .WithMany()
+            .HasPrincipalKey(t => t.IGDBId)
+            .HasForeignKey(p => p.PlatformTypeIGDBId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {

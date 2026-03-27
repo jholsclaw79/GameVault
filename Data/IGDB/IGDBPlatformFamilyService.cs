@@ -10,7 +10,7 @@ public class IGDBPlatformFamilyService(IGDBSyncService syncService)
     {
         return await syncService.SyncAsync<PlatformFamily, GVPlatformFamily>(
             IGDBClient.Endpoints.PlatformFamilies,
-            "fields id,name; limit 500",
+            "fields id,name,checksum,slug; limit 500",
             MapToGVPlatformFamily,
             context => context.PlatformFamilies,
             igdbPlatformFamily => igdbPlatformFamily.Id ?? 0
@@ -23,6 +23,8 @@ public class IGDBPlatformFamilyService(IGDBSyncService syncService)
         {
             IGDBId = igdbPlatformFamily.Id ?? 0,
             Name = igdbPlatformFamily.Name ?? "Unknown",
+            Checksum = igdbPlatformFamily.Checksum,
+            Slug = igdbPlatformFamily.Slug,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };

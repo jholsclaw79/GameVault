@@ -2,6 +2,7 @@
 @inject IGDBPlatformTypeService PlatformTypeService
 @inject IGDBPlatformFamilyService PlatformFamilyService
 @inject IGDBPlatformLogoService PlatformLogoService
+@inject IGDBPlatformService PlatformService
 
 <MudDialog>
     <DialogContent>
@@ -9,7 +10,7 @@
         @if (!SyncComplete)
         {
             <MudIcon Icon="@Icons.Material.Filled.Sync" Color="Color.Info" Size="Size.Large" Class="mb-4" />
-            <MudText Typo="Typo.h5" GutterBottom="true">Syncing Data</MudText>
+            <MudText Typo="Typo.h5" GutterBottom="true">Syncing IGDB Data</MudText>
 
             <MudProgressLinear Value="Progress" Class="my-4" />
 
