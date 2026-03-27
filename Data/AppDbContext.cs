@@ -49,6 +49,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .IsUnique();
 
         modelBuilder.Entity<GVPlatform>()
+            .Property(p => p.IsTracked)
+            .HasDefaultValue(false);
+
+        modelBuilder.Entity<GVPlatform>()
             .HasIndex(p => p.PlatformFamilyIGDBId);
 
         modelBuilder.Entity<GVPlatform>()

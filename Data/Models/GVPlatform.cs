@@ -22,6 +22,7 @@ public class GVPlatform : IIGDBSyncable
     public string? Url { get; set; }
     public string? VersionsIdsJson { get; set; }
     public string? WebsitesIdsJson { get; set; }
+    public bool IsTracked { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }

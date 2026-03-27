@@ -1,0 +1,71 @@
+@using GameVault.Data
+@using GameVault.Data.Models
+
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="2">
+            <MudText Typo="Typo.h5" GutterBottom="true">Add a Tracked System</MudText>
+
+            @if (IsLoading)
+            {
+                <MudProgressCircular Color="Color.Info" Indeterminate="true" Size="Size.Medium" />
+                <MudText Typo="Typo.body2">Loading available systems...</MudText>
+            }
+            else if (!string.IsNullOrWhiteSpace(ErrorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Dense="true">@ErrorMessage</MudAlert>
+            }
+            else if (!AvailablePlatforms.Any())
+            {
+                <MudAlert Severity="Severity.Info" Dense="true">
+                    There are no available systems to add.
+                </MudAlert>
+            }
+            else
+            {
+                <MudSelect T="long?" Label="System" Value="@SelectedPlatformId" ValueChanged="OnPlatformSelected" FullWidth="true">
+                    @foreach (GVPlatform platform in AvailablePlatforms)
+                    {
+                        <MudSelectItem T="long?" Value="@((long?)platform.Id)">@platform.Name</MudSelectItem>
+                    }
+                </MudSelect>
+
+                @if (SelectedPlatform != null)
+                {
+                    <MudPaper Class="pa-4 mt-2" Elevation="1">
+                        <MudGrid>
+                            <MudItem xs="12" md="4">
+                                @if (!string.IsNullOrWhiteSpace(SelectedPlatformLogoUrl))
+                                {
+                                    <MudPaper Class="pa-3 d-flex align-center justify-center" Style="background-color: transparent; min-height: 180px;" Outlined="true">
+                                        <MudImage Src="@SelectedPlatformLogoUrl" Alt="@SelectedPlatform.Name" Fluid="true" Style="max-height: 160px; object-fit: contain;" />
+                                    </MudPaper>
+                                }
+                                else
+                                {
+                                    <MudAlert Severity="Severity.Info" Dense="true">No logo available</MudAlert>
+                                }
+                            </MudItem>
+                            <MudItem xs="12" md="8">
+                                <MudText Typo="Typo.h6">@SelectedPlatform.Name</MudText>
+                                <MudText Typo="Typo.body2"><b>Abbreviation:</b> @(SelectedPlatform.Abbreviation ?? "N/A")</MudText>
+                                <MudText Typo="Typo.body2"><b>Generation:</b> @(SelectedPlatform.Generation?.ToString() ?? "N/A")</MudText>
+                                <MudText Typo="Typo.body2"><b>Type:</b> @(SelectedPlatform.PlatformType?.Name ?? "N/A")</MudText>
+                                <MudText Typo="Typo.body2"><b>Family:</b> @(SelectedPlatform.PlatformFamily?.Name ?? "N/A")</MudText>
+                                <MudText Typo="Typo.body2"><b>URL:</b> @(SelectedPlatform.Url ?? "N/A")</MudText>
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
+                }
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="Close" Disabled="@IsSaving">
+            Cancel
+        </MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="AddTrackedSystem" Disabled="@(!CanAddSelected || IsSaving)">
+            Add System
+        </MudButton>
+    </DialogActions>
+</MudDialog>

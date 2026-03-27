@@ -4,6 +4,7 @@
 
 <MudThemeProvider Theme="_draculaTheme" IsDarkMode="true" />
 <MudDialogProvider />
+<MudPopoverProvider />
 <MudSnackbarProvider />
 
 @if (StartupStateService.Instance.IsInitialized && StartupStateService.Instance.LockedOutBy.HasValue)

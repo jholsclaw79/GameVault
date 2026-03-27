@@ -7,15 +7,15 @@
 <MudDialog>
     <DialogContent>
         <MudStack Spacing="2">
-        @if (!SyncComplete)
+        @if (!_syncComplete)
         {
             <MudIcon Icon="@Icons.Material.Filled.Sync" Color="Color.Info" Size="Size.Large" Class="mb-4" />
             <MudText Typo="Typo.h5" GutterBottom="true">Syncing IGDB Data</MudText>
 
-            <MudProgressLinear Value="Progress" Class="my-4" />
+            <MudProgressLinear Value="_progress" Class="my-4" />
 
             <div Class="mt-6">
-                @foreach (var item in SyncItems)
+                @foreach (var item in _syncItems)
                 {
                     <div Class="d-flex align-center justify-space-between my-2">
                         <MudText Typo="Typo.body2">@item.Name</MudText>
@@ -40,13 +40,13 @@
             <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Large" Class="mb-4" />
             <MudText Typo="Typo.h5" Color="Color.Success" GutterBottom="true">Sync Complete</MudText>
             <MudText Typo="Typo.body1" Class="mb-6">
-                @SyncSummary
+                @_syncSummary
             </MudText>
         }
         </MudStack>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Filled" Color="Color.Success" Disabled="@(!SyncComplete)" OnClick="Close">
+        <MudButton Variant="Variant.Filled" Color="Color.Success" Disabled="@(!_syncComplete)" OnClick="Close">
             Done
         </MudButton>
     </DialogActions>

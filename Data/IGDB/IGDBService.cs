@@ -10,8 +10,8 @@ public class IGDBService
 
     public IGDBService()
     {
-        var clientId = Environment.GetEnvironmentVariable("IGDB_CLIENT_ID");
-        var clientSecret = Environment.GetEnvironmentVariable("IGDB_CLIENT_SECRET");
+        string? clientId = Environment.GetEnvironmentVariable("IGDB_CLIENT_ID");
+        string? clientSecret = Environment.GetEnvironmentVariable("IGDB_CLIENT_SECRET");
 
         if (string.IsNullOrEmpty(clientId) || string.IsNullOrEmpty(clientSecret))
         {
@@ -33,7 +33,7 @@ public class IGDBService
         try
         {
             // Try a simple query to validate the connection
-            var result = await Client.QueryAsync<Game>(IGDBClient.Endpoints.Games, "fields id; limit 1;");
+            Game[]? result = await Client.QueryAsync<Game>(IGDBClient.Endpoints.Games, "fields id; limit 1;");
             return result != null && result.Any();
         }
         catch

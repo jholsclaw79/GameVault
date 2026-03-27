@@ -6,8 +6,6 @@ namespace GameVault.Components.Layout;
 public partial class MainLayout
 {
     private bool _drawerOpen = true;
-    private bool _isDbConnected;
-    private bool _hasCheckedConnection;
 
     private void DrawerToggle()
     { 

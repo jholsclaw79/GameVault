@@ -12,6 +12,10 @@
         Home
     </MudNavLink>
 
+    <MudNavLink Icon="@Icons.Material.Filled.AddCircleOutline" OnClick="OpenAddTrackedSystemModal">
+        Add Tracked System
+    </MudNavLink>
+
 
     <MudDivider Class="my-2"/>
 
@@ -23,17 +27,3 @@
         Sync IGDB Data
     </MudButton>
 </MudNavMenu>
-
-@code {
-    private async Task OpenSyncModal()
-    {
-        var options = new DialogOptions
-        {
-            CloseButton = false,
-            MaxWidth = MaxWidth.Medium,
-            FullWidth = true
-        };
-
-        await DialogService.ShowAsync<SyncModal>(string.Empty, options);
-    }
-}
