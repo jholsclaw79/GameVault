@@ -32,7 +32,8 @@ public partial class SyncModal : ComponentBase
         SyncItems = new List<SyncItem>
         {
             new() { Name = "Platform Types" },
-            new() { Name = "Platform Families" }
+            new() { Name = "Platform Families" },
+            new() { Name = "Platform Logos" }
         };
     }
 
@@ -70,6 +71,21 @@ public partial class SyncModal : ComponentBase
             else
             {
                 await UpdateSyncStatus(1, SyncStatus.Failed);
+                failedCount++;
+            }
+
+            // Sync Platform Logos
+            await UpdateSyncStatus(2, SyncStatus.InProgress);
+            bool platformLogoSuccess = await PlatformLogoService.SyncPlatformLogosAsync();
+
+            if (platformLogoSuccess)
+            {
+                await UpdateSyncStatus(2, SyncStatus.Completed);
+                completedCount++;
+            }
+            else
+            {
+                await UpdateSyncStatus(2, SyncStatus.Failed);
                 failedCount++;
             }
 

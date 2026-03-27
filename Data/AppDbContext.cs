@@ -8,6 +8,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     
     public DbSet<GVPlatformType> PlatformTypes { get; set; }
     public DbSet<GVPlatformFamily> PlatformFamilies { get; set; }
+    public DbSet<GVPlatformLogo> PlatformLogos { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -27,6 +28,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasKey(p => p.Id);
 
         modelBuilder.Entity<GVPlatformFamily>()
+            .HasIndex(p => p.IGDBId)
+            .IsUnique();
+
+        // Configure PlatformLogo
+        modelBuilder.Entity<GVPlatformLogo>()
+            .HasKey(p => p.Id);
+
+        modelBuilder.Entity<GVPlatformLogo>()
             .HasIndex(p => p.IGDBId)
             .IsUnique();
     }
