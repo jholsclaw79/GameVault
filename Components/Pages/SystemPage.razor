@@ -1,0 +1,49 @@
+@page "/systems/{PlatformId:long}"
+@using GameVault.Data
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<AppDbContext> DbContextFactory
+
+<PageTitle>System</PageTitle>
+
+@if (IsLoading)
+{
+    <MudProgressCircular Color="Color.Info" Indeterminate="true" Size="Size.Large" />
+}
+else if (Platform == null)
+{
+    <MudAlert Severity="Severity.Warning" Dense="true">
+        System not found.
+    </MudAlert>
+}
+else
+{
+    <MudText Typo="Typo.h4" GutterBottom="true">@Platform.Name</MudText>
+
+    <MudPaper Class="pa-4">
+        <MudGrid>
+            <MudItem xs="12" md="3">
+                @if (!string.IsNullOrWhiteSpace(LogoUrl))
+                {
+                    <MudPaper Class="pa-3 d-flex align-center justify-center" Style="background-color: white; min-height: 180px;" Outlined="true">
+                        <MudImage Src="@LogoUrl" Alt="@Platform.Name" Fluid="true" Style="max-height: 160px; object-fit: contain;" />
+                    </MudPaper>
+                }
+                else
+                {
+                    <MudAlert Severity="Severity.Info" Dense="true">No logo available</MudAlert>
+                }
+            </MudItem>
+            <MudItem xs="12" md="9">
+                <MudText Typo="Typo.body1"><b>Abbreviation:</b> @(Platform.Abbreviation ?? "N/A")</MudText>
+                <MudText Typo="Typo.body1"><b>Generation:</b> @(Platform.Generation?.ToString() ?? "N/A")</MudText>
+                <MudText Typo="Typo.body1"><b>Type:</b> @(Platform.PlatformType?.Name ?? "N/A")</MudText>
+                <MudText Typo="Typo.body1"><b>Family:</b> @(Platform.PlatformFamily?.Name ?? "N/A")</MudText>
+                <MudText Typo="Typo.body1"><b>URL:</b> @(Platform.Url ?? "N/A")</MudText>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+}
+
+@code {
+
+}
