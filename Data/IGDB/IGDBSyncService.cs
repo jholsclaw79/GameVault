@@ -1,3 +1,4 @@
+using System.Reflection;
 using IGDB;
 using Microsoft.EntityFrameworkCore;
 
@@ -54,6 +55,12 @@ public class IGDBSyncService(IDbContextFactory<AppDbContext> dbContextFactory, I
                     {
                         TGVModel updatedModel = mapToGVModel(igdbModel);
                         updatedModel.Id = existingModel.Id;
+                        PropertyInfo? localTrackedProp = typeof(TGVModel).GetProperty("IsTracked");
+                        if (localTrackedProp != null && localTrackedProp.PropertyType == typeof(bool))
+                        {
+                            object? existingTrackedValue = localTrackedProp.GetValue(existingModel);
+                            localTrackedProp.SetValue(updatedModel, existingTrackedValue);
+                        }
                         context.Entry(existingModel).CurrentValues.SetValues(updatedModel);
                         context.Update(existingModel);
                     }

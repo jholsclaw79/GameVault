@@ -10,6 +10,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<GVPlatformFamily> PlatformFamilies { get; set; }
     public DbSet<GVPlatformLogo> PlatformLogos { get; set; }
     public DbSet<GVPlatform> Platforms { get; set; }
+    public DbSet<GVPlatformVersion> PlatformVersions { get; set; }
+    public DbSet<GVPlatformVersionReleaseDate> PlatformVersionReleaseDates { get; set; }
+    public DbSet<GVPlatformPlatformVersion> PlatformPlatformVersions { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -49,6 +52,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .IsUnique();
 
         modelBuilder.Entity<GVPlatform>()
+            .Property(p => p.IsTracked)
+            .HasDefaultValue(false);
+
+        modelBuilder.Entity<GVPlatform>()
             .HasIndex(p => p.PlatformFamilyIGDBId);
 
         modelBuilder.Entity<GVPlatform>()
@@ -77,6 +84,66 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasPrincipalKey(t => t.IGDBId)
             .HasForeignKey(p => p.PlatformTypeIGDBId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        // Configure PlatformVersion
+        modelBuilder.Entity<GVPlatformVersion>()
+            .HasKey(v => v.Id);
+
+        modelBuilder.Entity<GVPlatformVersion>()
+            .HasIndex(v => v.IGDBId)
+            .IsUnique();
+
+        modelBuilder.Entity<GVPlatformVersion>()
+            .HasIndex(v => v.PlatformLogoIGDBId);
+
+        modelBuilder.Entity<GVPlatformVersion>()
+            .HasIndex(v => v.MainManufacturerIGDBId);
+
+        modelBuilder.Entity<GVPlatformVersion>()
+            .HasOne(v => v.PlatformLogo)
+            .WithMany()
+            .HasPrincipalKey(l => l.IGDBId)
+            .HasForeignKey(v => v.PlatformLogoIGDBId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Configure PlatformVersionReleaseDate
+        modelBuilder.Entity<GVPlatformVersionReleaseDate>()
+            .HasKey(releaseDate => releaseDate.Id);
+
+        modelBuilder.Entity<GVPlatformVersionReleaseDate>()
+            .HasIndex(releaseDate => releaseDate.IGDBId)
+            .IsUnique();
+
+        modelBuilder.Entity<GVPlatformVersionReleaseDate>()
+            .HasIndex(releaseDate => releaseDate.PlatformVersionIGDBId);
+
+        modelBuilder.Entity<GVPlatformVersionReleaseDate>()
+            .HasOne(releaseDate => releaseDate.PlatformVersion)
+            .WithMany(platformVersion => platformVersion.ReleaseDates)
+            .HasPrincipalKey(platformVersion => platformVersion.IGDBId)
+            .HasForeignKey(releaseDate => releaseDate.PlatformVersionIGDBId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Configure Platform <-> PlatformVersion link table
+        modelBuilder.Entity<GVPlatformPlatformVersion>()
+            .HasKey(link => new { link.PlatformIGDBId, link.PlatformVersionIGDBId });
+
+        modelBuilder.Entity<GVPlatformPlatformVersion>()
+            .HasIndex(link => link.PlatformVersionIGDBId);
+
+        modelBuilder.Entity<GVPlatformPlatformVersion>()
+            .HasOne(link => link.Platform)
+            .WithMany(platform => platform.PlatformVersionLinks)
+            .HasPrincipalKey(platform => platform.IGDBId)
+            .HasForeignKey(link => link.PlatformIGDBId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<GVPlatformPlatformVersion>()
+            .HasOne(link => link.PlatformVersion)
+            .WithMany(platformVersion => platformVersion.PlatformLinks)
+            .HasPrincipalKey(platformVersion => platformVersion.IGDBId)
+            .HasForeignKey(link => link.PlatformVersionIGDBId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {

@@ -4,6 +4,7 @@ using GameVault.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GameVault.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260327015939_AddPlatformVersionLinks")]
+    partial class AddPlatformVersionLinks
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -319,61 +322,6 @@ namespace GameVault.Migrations
                     b.ToTable("PlatformVersions");
                 });
 
-            modelBuilder.Entity("GameVault.Data.Models.GVPlatformVersionReleaseDate", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<string>("Checksum")
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTime?>("Date")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<long?>("DateFormatIGDBId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("Human")
-                        .HasColumnType("longtext");
-
-                    b.Property<long>("IGDBId")
-                        .HasColumnType("bigint");
-
-                    b.Property<int?>("Month")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<long?>("PlatformVersionIGDBId")
-                        .HasColumnType("bigint");
-
-                    b.Property<long?>("ReleaseRegionIGDBId")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<int?>("Year")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("IGDBId")
-                        .IsUnique();
-
-                    b.HasIndex("PlatformVersionIGDBId");
-
-                    b.ToTable("PlatformVersionReleaseDates");
-                });
-
             modelBuilder.Entity("GameVault.Data.Models.GVPlatform", b =>
                 {
                     b.HasOne("GameVault.Data.Models.GVPlatformFamily", "PlatformFamily")
@@ -433,17 +381,6 @@ namespace GameVault.Migrations
                     b.Navigation("PlatformLogo");
                 });
 
-            modelBuilder.Entity("GameVault.Data.Models.GVPlatformVersionReleaseDate", b =>
-                {
-                    b.HasOne("GameVault.Data.Models.GVPlatformVersion", "PlatformVersion")
-                        .WithMany("ReleaseDates")
-                        .HasForeignKey("PlatformVersionIGDBId")
-                        .HasPrincipalKey("IGDBId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("PlatformVersion");
-                });
-
             modelBuilder.Entity("GameVault.Data.Models.GVPlatform", b =>
                 {
                     b.Navigation("PlatformVersionLinks");
@@ -452,8 +389,6 @@ namespace GameVault.Migrations
             modelBuilder.Entity("GameVault.Data.Models.GVPlatformVersion", b =>
                 {
                     b.Navigation("PlatformLinks");
-
-                    b.Navigation("ReleaseDates");
                 });
 #pragma warning restore 612, 618
         }

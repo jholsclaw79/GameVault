@@ -12,13 +12,23 @@
         Home
     </MudNavLink>
 
-    <MudNavLink Href="counter" Icon="@Icons.Material.Filled.Add">
-        Counter
+    <MudNavLink Icon="@Icons.Material.Filled.AddCircleOutline" OnClick="OpenAddTrackedSystemModal">
+        Add Tracked System
     </MudNavLink>
 
-    <MudNavLink Href="weather" Icon="@Icons.Material.Filled.Cloud">
-        Weather
-    </MudNavLink>
+    @if (TrackedPlatforms.Any())
+    {
+        <MudDivider Class="my-2"/>
+        <MudText Typo="Typo.caption" Class="px-4 py-1 mud-text-secondary">Tracked Systems</MudText>
+
+        @foreach (var trackedPlatform in TrackedPlatforms)
+        {
+            <MudNavLink Href="@($"/systems/{trackedPlatform.Id}")" Icon="@Icons.Material.Filled.VideogameAsset">
+                @trackedPlatform.Name
+            </MudNavLink>
+        }
+    }
+
 
     <MudDivider Class="my-2"/>
 
@@ -30,17 +40,3 @@
         Sync IGDB Data
     </MudButton>
 </MudNavMenu>
-
-@code {
-    private async Task OpenSyncModal()
-    {
-        var options = new DialogOptions
-        {
-            CloseButton = false,
-            MaxWidth = MaxWidth.Medium,
-            FullWidth = true
-        };
-
-        await DialogService.ShowAsync<SyncModal>(string.Empty, options);
-    }
-}

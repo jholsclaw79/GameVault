@@ -4,6 +4,7 @@ using GameVault.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GameVault.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260327003414_AddPlatformTrackingFlag")]
+    partial class AddPlatformTrackingFlag
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -185,21 +188,6 @@ namespace GameVault.Migrations
                     b.ToTable("PlatformLogos");
                 });
 
-            modelBuilder.Entity("GameVault.Data.Models.GVPlatformPlatformVersion", b =>
-                {
-                    b.Property<long>("PlatformIGDBId")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("PlatformVersionIGDBId")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("PlatformIGDBId", "PlatformVersionIGDBId");
-
-                    b.HasIndex("PlatformVersionIGDBId");
-
-                    b.ToTable("PlatformPlatformVersions");
-                });
-
             modelBuilder.Entity("GameVault.Data.Models.GVPlatformType", b =>
                 {
                     b.Property<long>("Id")
@@ -232,148 +220,6 @@ namespace GameVault.Migrations
                     b.ToTable("PlatformTypes");
                 });
 
-            modelBuilder.Entity("GameVault.Data.Models.GVPlatformVersion", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<string>("CPU")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Checksum")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("CompaniesIdsJson")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Connectivity")
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("Graphics")
-                        .HasColumnType("longtext");
-
-                    b.Property<long>("IGDBId")
-                        .HasColumnType("bigint");
-
-                    b.Property<long?>("MainManufacturerIGDBId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("Media")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Memory")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("OS")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Output")
-                        .HasColumnType("longtext");
-
-                    b.Property<long?>("PlatformLogoIGDBId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("PlatformVersionReleaseDatesIdsJson")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Resolutions")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Slug")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Sound")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Storage")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Summary")
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("Url")
-                        .HasColumnType("longtext");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("IGDBId")
-                        .IsUnique();
-
-                    b.HasIndex("MainManufacturerIGDBId");
-
-                    b.HasIndex("PlatformLogoIGDBId");
-
-                    b.ToTable("PlatformVersions");
-                });
-
-            modelBuilder.Entity("GameVault.Data.Models.GVPlatformVersionReleaseDate", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<string>("Checksum")
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTime?>("Date")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<long?>("DateFormatIGDBId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("Human")
-                        .HasColumnType("longtext");
-
-                    b.Property<long>("IGDBId")
-                        .HasColumnType("bigint");
-
-                    b.Property<int?>("Month")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<long?>("PlatformVersionIGDBId")
-                        .HasColumnType("bigint");
-
-                    b.Property<long?>("ReleaseRegionIGDBId")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<int?>("Year")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("IGDBId")
-                        .IsUnique();
-
-                    b.HasIndex("PlatformVersionIGDBId");
-
-                    b.ToTable("PlatformVersionReleaseDates");
-                });
-
             modelBuilder.Entity("GameVault.Data.Models.GVPlatform", b =>
                 {
                     b.HasOne("GameVault.Data.Models.GVPlatformFamily", "PlatformFamily")
@@ -399,61 +245,6 @@ namespace GameVault.Migrations
                     b.Navigation("PlatformLogo");
 
                     b.Navigation("PlatformType");
-                });
-
-            modelBuilder.Entity("GameVault.Data.Models.GVPlatformPlatformVersion", b =>
-                {
-                    b.HasOne("GameVault.Data.Models.GVPlatform", "Platform")
-                        .WithMany("PlatformVersionLinks")
-                        .HasForeignKey("PlatformIGDBId")
-                        .HasPrincipalKey("IGDBId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("GameVault.Data.Models.GVPlatformVersion", "PlatformVersion")
-                        .WithMany("PlatformLinks")
-                        .HasForeignKey("PlatformVersionIGDBId")
-                        .HasPrincipalKey("IGDBId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Platform");
-
-                    b.Navigation("PlatformVersion");
-                });
-
-            modelBuilder.Entity("GameVault.Data.Models.GVPlatformVersion", b =>
-                {
-                    b.HasOne("GameVault.Data.Models.GVPlatformLogo", "PlatformLogo")
-                        .WithMany()
-                        .HasForeignKey("PlatformLogoIGDBId")
-                        .HasPrincipalKey("IGDBId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("PlatformLogo");
-                });
-
-            modelBuilder.Entity("GameVault.Data.Models.GVPlatformVersionReleaseDate", b =>
-                {
-                    b.HasOne("GameVault.Data.Models.GVPlatformVersion", "PlatformVersion")
-                        .WithMany("ReleaseDates")
-                        .HasForeignKey("PlatformVersionIGDBId")
-                        .HasPrincipalKey("IGDBId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("PlatformVersion");
-                });
-
-            modelBuilder.Entity("GameVault.Data.Models.GVPlatform", b =>
-                {
-                    b.Navigation("PlatformVersionLinks");
-                });
-
-            modelBuilder.Entity("GameVault.Data.Models.GVPlatformVersion", b =>
-                {
-                    b.Navigation("PlatformLinks");
-
-                    b.Navigation("ReleaseDates");
                 });
 #pragma warning restore 612, 618
         }

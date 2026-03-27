@@ -9,17 +9,17 @@ public partial class SyncModal : ComponentBase
 
     public class SyncItem
     {
-        public string Name { get; set; } = "";
+        public string Name { get; init; } = "";
         public SyncStatus Status { get; set; } = SyncStatus.Pending;
     }
 
     [CascadingParameter]
-    private IMudDialogInstance MudDialog { get; set; } = default!;
+    private IMudDialogInstance MudDialog { get; set; } = null!;
 
-    private List<SyncItem> SyncItems = new();
-    private bool SyncComplete = false;
-    private string SyncSummary = "";
-    private int Progress = 0;
+    private List<SyncItem> _syncItems = [];
+    private bool _syncComplete = false;
+    private string _syncSummary = "";
+    private int _progress = 0;
 
     protected override void OnInitialized()
     {
@@ -29,13 +29,15 @@ public partial class SyncModal : ComponentBase
 
     private void InitializeSyncItems()
     {
-        SyncItems = new List<SyncItem>
-        {
-            new() { Name = "Platform Types" },
-            new() { Name = "Platform Families" },
-            new() { Name = "Platform Logos" },
-            new() { Name = "Platforms" }
-        };
+        _syncItems =
+        [
+            new SyncItem { Name = "Platform Types" },
+            new SyncItem { Name = "Platform Families" },
+            new SyncItem { Name = "Platform Logos" },
+            new SyncItem { Name = "Platform Versions" },
+            new SyncItem { Name = "Platform Version Release Dates" },
+            new SyncItem { Name = "Platforms" }
+        ];
     }
 
     private async Task RunSyncAsync()
@@ -90,11 +92,11 @@ public partial class SyncModal : ComponentBase
                 failedCount++;
             }
 
-            // Sync Platforms
+            // Sync Platform Versions
             await UpdateSyncStatus(3, SyncStatus.InProgress);
-            bool platformTableSuccess = await PlatformService.SyncPlatformsAsync();
+            bool platformVersionSuccess = await PlatformVersionService.SyncPlatformVersionsAsync();
 
-            if (platformTableSuccess)
+            if (platformVersionSuccess)
             {
                 await UpdateSyncStatus(3, SyncStatus.Completed);
                 completedCount++;
@@ -105,19 +107,49 @@ public partial class SyncModal : ComponentBase
                 failedCount++;
             }
 
+            // Sync Platform Version Release Dates
+            await UpdateSyncStatus(4, SyncStatus.InProgress);
+            bool platformVersionReleaseDateSuccess = await PlatformVersionReleaseDateService.SyncPlatformVersionReleaseDatesAsync();
+
+            if (platformVersionReleaseDateSuccess)
+            {
+                await UpdateSyncStatus(4, SyncStatus.Completed);
+                completedCount++;
+            }
+            else
+            {
+                await UpdateSyncStatus(4, SyncStatus.Failed);
+                failedCount++;
+            }
+
+            // Sync Platforms
+            await UpdateSyncStatus(5, SyncStatus.InProgress);
+            bool platformTableSuccess = await PlatformService.SyncPlatformsAsync();
+
+            if (platformTableSuccess)
+            {
+                await UpdateSyncStatus(5, SyncStatus.Completed);
+                completedCount++;
+            }
+            else
+            {
+                await UpdateSyncStatus(5, SyncStatus.Failed);
+                failedCount++;
+            }
+
             // Update progress
-            Progress = 100;
-            SyncComplete = true;
-            SyncSummary = $"Completed {completedCount} sync(s)";
+            _progress = 100;
+            _syncComplete = true;
+            _syncSummary = $"Completed {completedCount} sync(s)";
             if (failedCount > 0)
             {
-                SyncSummary += $" with {failedCount} failure(s)";
+                _syncSummary += $" with {failedCount} failure(s)";
             }
         }
         catch (Exception ex)
         {
-            SyncSummary = $"Error during sync: {ex.Message}";
-            SyncComplete = true;
+            _syncSummary = $"Error during sync: {ex.Message}";
+            _syncComplete = true;
         }
 
         StateHasChanged();
@@ -125,10 +157,10 @@ public partial class SyncModal : ComponentBase
 
     private async Task UpdateSyncStatus(int index, SyncStatus status)
     {
-        if (index >= 0 && index < SyncItems.Count)
+        if (index >= 0 && index < _syncItems.Count)
         {
-            SyncItems[index].Status = status;
-            Progress = (int)(((index + 1) / (double)SyncItems.Count) * 100);
+            _syncItems[index].Status = status;
+            _progress = (int)(((index + 1) / (double)_syncItems.Count) * 100);
             StateHasChanged();
             await Task.Delay(300);
         }
