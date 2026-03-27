@@ -1,20 +1,46 @@
-﻿<MudNavMenu Color="Color.Success" Bordered="true">
+@inject IDialogService DialogService
+
+<MudNavMenu Color="Color.Success" Bordered="true">
 
     <MudLink Href="/" Class="d-flex align-center mud-text-secondary" Style="padding-top:5px;">
         <img src="images/logo.png" alt="GameVault" style="height: 50px; cursor: pointer;"/>
     </MudLink>
 
     <MudDivider Class="my-2"/>
-    
+
     <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">
         Home
     </MudNavLink>
-    
+
     <MudNavLink Href="counter" Icon="@Icons.Material.Filled.Add">
         Counter
     </MudNavLink>
-    
+
     <MudNavLink Href="weather" Icon="@Icons.Material.Filled.Cloud">
         Weather
     </MudNavLink>
+
+    <MudDivider Class="my-2"/>
+
+    <MudButton Variant="Variant.Outlined"
+               Color="Color.Info"
+               StartIcon="@Icons.Material.Filled.Sync"
+               FullWidth="true"
+               OnClick="OpenSyncModal">
+        Sync IGDB Data
+    </MudButton>
 </MudNavMenu>
+
+@code {
+    private async Task OpenSyncModal()
+    {
+        var options = new DialogOptions
+        {
+            CloseButton = false,
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true
+        };
+
+        await DialogService.ShowAsync<SyncModal>(string.Empty, options);
+    }
+}
