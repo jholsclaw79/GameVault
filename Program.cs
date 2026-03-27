@@ -32,6 +32,8 @@ builder.Services
     .AddScoped<IGDBPlatformTypeService>()
     .AddScoped<IGDBPlatformFamilyService>()
     .AddScoped<IGDBPlatformLogoService>()
+    .AddScoped<IGDBPlatformVersionService>()
+    .AddScoped<IGDBPlatformVersionReleaseDateService>()
     .AddScoped<IGDBPlatformService>();
 
 // Force mysql to use version 8.  Actual check is done in the AppDbContext file

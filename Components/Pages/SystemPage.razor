@@ -1,5 +1,6 @@
 @page "/systems/{PlatformId:long}"
 @using GameVault.Data
+@using GameVault.Data.Models
 @using Microsoft.EntityFrameworkCore
 @inject IDbContextFactory<AppDbContext> DbContextFactory
 
@@ -19,29 +20,124 @@ else
 {
     <MudText Typo="Typo.h4" GutterBottom="true">@Platform.Name</MudText>
 
-    <MudPaper Class="pa-4">
-        <MudGrid>
-            <MudItem xs="12" md="3">
-                @if (!string.IsNullOrWhiteSpace(LogoUrl))
+    <MudText Typo="Typo.h5" GutterBottom="true">Versions</MudText>
+    @if (!PlatformVersions.Any())
+    {
+        <MudPaper Class="pa-4 mb-3">
+            <MudGrid>
+                <MudItem xs="12" md="3">
+                    @if (!string.IsNullOrWhiteSpace(LogoUrl))
+                    {
+                        <MudPaper Class="pa-3 d-flex align-center justify-center" Style="background-color: white; min-height: 180px;" Outlined="true">
+                            <MudImage Src="@LogoUrl" Alt="@Platform.Name" Fluid="true" Style="max-height: 160px; object-fit: contain;" />
+                        </MudPaper>
+                    }
+                    else
+                    {
+                        <MudAlert Severity="Severity.Info" Dense="true">No logo available</MudAlert>
+                    }
+                </MudItem>
+                <MudItem xs="12" md="9">
+                    <MudText Typo="Typo.body1"><b>Abbreviation:</b> @(Platform.Abbreviation ?? "N/A")</MudText>
+                    <MudText Typo="Typo.body1"><b>Generation:</b> @(Platform.Generation?.ToString() ?? "N/A")</MudText>
+                    <MudText Typo="Typo.body1"><b>Type:</b> @(Platform.PlatformType?.Name ?? "N/A")</MudText>
+                    <MudText Typo="Typo.body1"><b>Family:</b> @(Platform.PlatformFamily?.Name ?? "N/A")</MudText>
+                    <MudText Typo="Typo.body1"><b>URL:</b> @(Platform.Url ?? "N/A")</MudText>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+
+        <MudAlert Severity="Severity.Info" Dense="true">
+            No platform versions were found for this system.
+        </MudAlert>
+    }
+    else if (HasSingleVersion)
+    {
+        GVPlatformVersion version = PlatformVersions[0];
+        string? versionLogoUrl = GetPlatformVersionLogoUrl(version);
+
+        <MudPaper Class="pa-4">
+            <MudGrid>
+                <MudItem xs="12" md="3">
+                    @if (!string.IsNullOrWhiteSpace(versionLogoUrl))
+                    {
+                        <MudPaper Class="pa-3 d-flex align-center justify-center" Style="background-color: white; min-height: 180px;" Outlined="true">
+                            <MudImage Src="@versionLogoUrl" Alt="@version.Name" Fluid="true" Style="max-height: 160px; object-fit: contain;" />
+                        </MudPaper>
+                    }
+                    else
+                    {
+                        <MudAlert Severity="Severity.Info" Dense="true">No version logo available</MudAlert>
+                    }
+                </MudItem>
+                <MudItem xs="12" md="9">
+                    <MudText Typo="Typo.h6" GutterBottom="true">@version.Name</MudText>
+                    <MudText Typo="Typo.body1"><b>Slug:</b> @(version.Slug ?? "N/A")</MudText>
+                    <MudText Typo="Typo.body1"><b>CPU:</b> @(version.CPU ?? "N/A")</MudText>
+                    <MudText Typo="Typo.body1"><b>Memory:</b> @(version.Memory ?? "N/A")</MudText>
+                    <MudText Typo="Typo.body1"><b>Storage:</b> @(version.Storage ?? "N/A")</MudText>
+                    <MudText Typo="Typo.body1"><b>OS:</b> @(version.OS ?? "N/A")</MudText>
+                    <MudText Typo="Typo.body1"><b>URL:</b> @(version.Url ?? "N/A")</MudText>
+                    <MudText Typo="Typo.body2" Class="mt-2">@(version.Summary ?? "No summary available.")</MudText>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    }
+    else if (HasMultipleVersions)
+    {
+        @if (CurrentVersion != null)
+        {
+            string? versionLogoUrl = GetPlatformVersionLogoUrl(CurrentVersion);
+
+            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
+                <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft" Color="Color.Default" OnClick="ShowPreviousVersion" aria-label="Previous version" />
+                <MudText Typo="Typo.subtitle1">
+                    @CurrentVersion.Name (@(CurrentVersionIndex + 1)/@PlatformVersions.Count)
+                </MudText>
+                <MudIconButton Icon="@Icons.Material.Filled.ChevronRight" Color="Color.Default" OnClick="ShowNextVersion" aria-label="Next version" />
+            </MudStack>
+
+            <MudStack Row="true" Class="mb-3" Style="gap: 0.25rem; flex-wrap: wrap;" AlignItems="AlignItems.Center" Justify="Justify.Center">
+                @for (int i = 0; i < PlatformVersions.Count; i++)
                 {
-                    <MudPaper Class="pa-3 d-flex align-center justify-center" Style="background-color: white; min-height: 180px;" Outlined="true">
-                        <MudImage Src="@LogoUrl" Alt="@Platform.Name" Fluid="true" Style="max-height: 160px; object-fit: contain;" />
-                    </MudPaper>
+                    int versionIndex = i;
+                    <MudIconButton
+                        Icon="@(versionIndex == CurrentVersionIndex ? Icons.Material.Filled.RadioButtonChecked : Icons.Material.Filled.RadioButtonUnchecked)"
+                        Color="@(versionIndex == CurrentVersionIndex ? Color.Primary : Color.Default)"
+                        Size="Size.Small"
+                        OnClick="@(() => SelectVersion(versionIndex))"
+                        aria-label="@($"Go to version {versionIndex + 1}")" />
                 }
-                else
-                {
-                    <MudAlert Severity="Severity.Info" Dense="true">No logo available</MudAlert>
-                }
-            </MudItem>
-            <MudItem xs="12" md="9">
-                <MudText Typo="Typo.body1"><b>Abbreviation:</b> @(Platform.Abbreviation ?? "N/A")</MudText>
-                <MudText Typo="Typo.body1"><b>Generation:</b> @(Platform.Generation?.ToString() ?? "N/A")</MudText>
-                <MudText Typo="Typo.body1"><b>Type:</b> @(Platform.PlatformType?.Name ?? "N/A")</MudText>
-                <MudText Typo="Typo.body1"><b>Family:</b> @(Platform.PlatformFamily?.Name ?? "N/A")</MudText>
-                <MudText Typo="Typo.body1"><b>URL:</b> @(Platform.Url ?? "N/A")</MudText>
-            </MudItem>
-        </MudGrid>
-    </MudPaper>
+            </MudStack>
+
+            <MudPaper Class="pa-4 version-slide" Style="min-height: 100%;">
+                <MudGrid>
+                    <MudItem xs="12" md="3">
+                        @if (!string.IsNullOrWhiteSpace(versionLogoUrl))
+                        {
+                            <MudPaper Class="pa-3 d-flex align-center justify-center" Style="background-color: white; min-height: 180px;" Outlined="true">
+                                <MudImage Src="@versionLogoUrl" Alt="@CurrentVersion.Name" Fluid="true" Style="max-height: 160px; object-fit: contain;" />
+                            </MudPaper>
+                        }
+                        else
+                        {
+                            <MudAlert Severity="Severity.Info" Dense="true">No version logo available</MudAlert>
+                        }
+                    </MudItem>
+                    <MudItem xs="12" md="9">
+                        <MudText Typo="Typo.h6" GutterBottom="true">@CurrentVersion.Name</MudText>
+                        <MudText Typo="Typo.body1"><b>Slug:</b> @(CurrentVersion.Slug ?? "N/A")</MudText>
+                        <MudText Typo="Typo.body1"><b>CPU:</b> @(CurrentVersion.CPU ?? "N/A")</MudText>
+                        <MudText Typo="Typo.body1"><b>Memory:</b> @(CurrentVersion.Memory ?? "N/A")</MudText>
+                        <MudText Typo="Typo.body1"><b>Storage:</b> @(CurrentVersion.Storage ?? "N/A")</MudText>
+                        <MudText Typo="Typo.body1"><b>OS:</b> @(CurrentVersion.OS ?? "N/A")</MudText>
+                        <MudText Typo="Typo.body1"><b>URL:</b> @(CurrentVersion.Url ?? "N/A")</MudText>
+                        <MudText Typo="Typo.body2" Class="mt-2">@(CurrentVersion.Summary ?? "No summary available.")</MudText>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        }
+    }
 }
 
 @code {
