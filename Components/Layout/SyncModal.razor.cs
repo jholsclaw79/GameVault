@@ -31,7 +31,8 @@ public partial class SyncModal : ComponentBase
     {
         SyncItems = new List<SyncItem>
         {
-            new() { Name = "Platform Types" }
+            new() { Name = "Platform Types" },
+            new() { Name = "Platform Families" }
         };
     }
 
@@ -54,6 +55,21 @@ public partial class SyncModal : ComponentBase
             else
             {
                 await UpdateSyncStatus(0, SyncStatus.Failed);
+                failedCount++;
+            }
+
+            // Sync Platform Families
+            await UpdateSyncStatus(1, SyncStatus.InProgress);
+            bool platformFamilySuccess = await PlatformFamilyService.SyncPlatformFamiliesAsync();
+
+            if (platformFamilySuccess)
+            {
+                await UpdateSyncStatus(1, SyncStatus.Completed);
+                completedCount++;
+            }
+            else
+            {
+                await UpdateSyncStatus(1, SyncStatus.Failed);
                 failedCount++;
             }
 
