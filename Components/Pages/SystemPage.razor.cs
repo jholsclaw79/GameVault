@@ -12,6 +12,12 @@ public partial class SystemPage
 {
     [Inject]
     private IDialogService DialogService { get; set; } = default!;
+    
+    [Inject]
+    private SystemGameProcessingService GameProcessingService { get; set; } = default!;
+
+    [Inject]
+    private ISnackbar Snackbar { get; set; } = default!;
 
     [Parameter]
     public long PlatformId { get; set; }
@@ -19,6 +25,11 @@ public partial class SystemPage
     private GVPlatform? Platform { get; set; }
     private List<GVPlatformVersion> PlatformVersions { get; set; } = [];
     private bool IsLoading { get; set; } = true;
+    private bool IsProcessingGames { get; set; }
+    private string? ProcessResultMessage { get; set; }
+    private string? CurrentProcessStep { get; set; }
+    private int? CurrentProcessPercent { get; set; }
+    private bool LastProcessSucceeded { get; set; }
     private int CurrentVersionIndex { get; set; }
     private bool HasSingleVersion => PlatformVersions.Count == 1;
     private bool HasMultipleVersions => PlatformVersions.Count > 1;
@@ -224,5 +235,54 @@ public partial class SystemPage
         Platform.RomFolder = editResult.RomFolder;
         Platform.RomTypes = editResult.RomTypes;
         StateHasChanged();
+    }
+
+    private async Task ProcessGames()
+    {
+        if (Platform == null || IsProcessingGames)
+        {
+            return;
+        }
+
+        try
+        {
+            IsProcessingGames = true;
+            ProcessResultMessage = "Processing games. This can take a while for large ROM folders.";
+            CurrentProcessStep = "Starting...";
+            CurrentProcessPercent = 0;
+            LastProcessSucceeded = true;
+            StateHasChanged();
+
+            Progress<SystemGameProcessingProgress> progress = new(async update =>
+            {
+                await InvokeAsync(() =>
+                {
+                    CurrentProcessStep = update.Step;
+                    CurrentProcessPercent = update.Percent;
+                    StateHasChanged();
+                });
+            });
+
+            SystemGameProcessingResult result = await GameProcessingService.ProcessPlatformAsync(Platform.Id, progress);
+            LastProcessSucceeded = result.IsSuccess;
+            ProcessResultMessage = result.IsSuccess
+                ? $"{result.Message} IGDB games: {result.IGDBGamesProcessed}. ROMs processed: {result.RomFilesProcessed}. Matched: {result.RomMatches}. Unmatched: {result.RomUnmatched}."
+                : result.Message;
+            CurrentProcessStep = result.IsSuccess ? "Completed." : "Failed.";
+            CurrentProcessPercent = result.IsSuccess ? 100 : CurrentProcessPercent;
+
+            Snackbar.Add(ProcessResultMessage, result.IsSuccess ? Severity.Success : Severity.Warning);
+        }
+        catch (Exception ex)
+        {
+            LastProcessSucceeded = false;
+            ProcessResultMessage = $"Failed to process games: {ex.Message}";
+            CurrentProcessStep = "Failed.";
+            Snackbar.Add(ProcessResultMessage, Severity.Error);
+        }
+        finally
+        {
+            IsProcessingGames = false;
+        }
     }
 }

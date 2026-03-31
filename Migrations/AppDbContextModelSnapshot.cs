@@ -99,6 +99,11 @@ namespace GameVault.Migrations
                     b.Property<string>("InvolvedCompaniesIdsJson")
                         .HasColumnType("longtext");
 
+                    b.Property<bool>("IsLocalOnly")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(false);
+
                     b.Property<bool>("IsTracked")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("tinyint(1)")
@@ -314,6 +319,59 @@ namespace GameVault.Migrations
                     b.HasIndex("GenreIGDBId");
 
                     b.ToTable("GameGenres");
+                });
+
+            modelBuilder.Entity("GameVault.Data.Models.GVGameRom", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<long>("FileSizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("GameIGDBId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Md5")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<long>("PlatformIGDBId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Sha1")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GameIGDBId");
+
+                    b.HasIndex("Md5");
+
+                    b.HasIndex("Sha1");
+
+                    b.HasIndex("PlatformIGDBId", "FilePath")
+                        .IsUnique();
+
+                    b.ToTable("GameRoms");
                 });
 
             modelBuilder.Entity("GameVault.Data.Models.GVGameScreenshot", b =>
@@ -922,6 +980,27 @@ namespace GameVault.Migrations
                     b.Navigation("Genre");
                 });
 
+            modelBuilder.Entity("GameVault.Data.Models.GVGameRom", b =>
+                {
+                    b.HasOne("GameVault.Data.Models.GVGame", "Game")
+                        .WithMany("RomFiles")
+                        .HasForeignKey("GameIGDBId")
+                        .HasPrincipalKey("IGDBId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("GameVault.Data.Models.GVPlatform", "Platform")
+                        .WithMany()
+                        .HasForeignKey("PlatformIGDBId")
+                        .HasPrincipalKey("IGDBId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Game");
+
+                    b.Navigation("Platform");
+                });
+
             modelBuilder.Entity("GameVault.Data.Models.GVGameScreenshotLink", b =>
                 {
                     b.HasOne("GameVault.Data.Models.GVGame", "Game")
@@ -1043,6 +1122,8 @@ namespace GameVault.Migrations
                     b.Navigation("ExpansionLinks");
 
                     b.Navigation("GenreLinks");
+
+                    b.Navigation("RomFiles");
 
                     b.Navigation("ScreenshotLinks");
 

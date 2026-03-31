@@ -21,6 +21,7 @@ builder.Services
     .AddMudServices()
     .AddRazorComponents()
     .AddInteractiveServerComponents();
+builder.Services.AddHttpClient();
 
 // Register StartupStateService as singleton
 builder.Services.AddSingleton(StartupStateService.Instance);
@@ -46,7 +47,9 @@ builder.Services
     .AddScoped<IGDBGameGenreService>()
     .AddScoped<IGDBGameScreenshotLinkService>()
     .AddScoped<IGDBGameVideoLinkService>()
-    .AddScoped<IGDBGameGraphSyncService>();
+    .AddScoped<IGDBGameGraphSyncService>()
+    .AddSingleton<HasheousLookupService>()
+    .AddScoped<SystemGameProcessingService>();
 
 // Force mysql to use version 8.  Actual check is done in the AppDbContext file
 builder.Services.AddDbContextFactory<AppDbContext>(options => options.UseMySql(mySqlConnectionString, new MySqlServerVersion(new Version(8,0,0))));

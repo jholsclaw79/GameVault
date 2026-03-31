@@ -24,6 +24,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<GVGameDlc> GameDlcs { get; set; }
     public DbSet<GVGameExpandedGame> GameExpandedGames { get; set; }
     public DbSet<GVGameExpansion> GameExpansions { get; set; }
+    public DbSet<GVGameRom> GameRoms { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -169,6 +170,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasDefaultValue(false);
 
         modelBuilder.Entity<GVGame>()
+            .Property(game => game.IsLocalOnly)
+            .HasDefaultValue(false);
+
+        modelBuilder.Entity<GVGame>()
             .HasIndex(game => game.CoverIGDBId);
 
         modelBuilder.Entity<GVGame>()
@@ -192,6 +197,37 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasPrincipalKey(cover => cover.IGDBId)
             .HasForeignKey(game => game.CoverIGDBId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        // Configure Game ROM
+        modelBuilder.Entity<GVGameRom>()
+            .HasKey(rom => rom.Id);
+
+        modelBuilder.Entity<GVGameRom>()
+            .HasIndex(rom => new { rom.PlatformIGDBId, rom.FilePath })
+            .IsUnique();
+
+        modelBuilder.Entity<GVGameRom>()
+            .HasIndex(rom => rom.Md5);
+
+        modelBuilder.Entity<GVGameRom>()
+            .HasIndex(rom => rom.Sha1);
+
+        modelBuilder.Entity<GVGameRom>()
+            .HasIndex(rom => rom.GameIGDBId);
+
+        modelBuilder.Entity<GVGameRom>()
+            .HasOne(rom => rom.Game)
+            .WithMany(game => game.RomFiles)
+            .HasPrincipalKey(game => game.IGDBId)
+            .HasForeignKey(rom => rom.GameIGDBId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<GVGameRom>()
+            .HasOne(rom => rom.Platform)
+            .WithMany()
+            .HasPrincipalKey(platform => platform.IGDBId)
+            .HasForeignKey(rom => rom.PlatformIGDBId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         // Configure GameCover
         modelBuilder.Entity<GVGameCover>()
