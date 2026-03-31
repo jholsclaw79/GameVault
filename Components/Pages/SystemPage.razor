@@ -18,7 +18,16 @@ else if (Platform == null)
 }
 else
 {
-    <MudText Typo="Typo.h4" GutterBottom="true">@Platform.Name</MudText>
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
+        <MudText Typo="Typo.h4">@Platform.Name</MudText>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.FolderOpen" OnClick="OpenRomFolderSelector">
+            Set ROM Folder
+        </MudButton>
+    </MudStack>
+
+    <MudText Typo="Typo.body2" Class="mb-3">
+        <b>ROM Folder:</b> @(string.IsNullOrWhiteSpace(Platform.RomFolder) ? "Not set" : Platform.RomFolder)
+    </MudText>
 
     <MudText Typo="Typo.h5" GutterBottom="true">Versions</MudText>
     @if (!PlatformVersions.Any())

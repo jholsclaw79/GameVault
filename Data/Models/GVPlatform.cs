@@ -20,6 +20,7 @@ public class GVPlatform : IIGDBSyncable
     public string? Slug { get; set; }
     public string? Summary { get; set; }
     public string? Url { get; set; }
+    public string? RomFolder { get; set; }
     public string? VersionsIdsJson { get; set; }
     public ICollection<GVPlatformPlatformVersion> PlatformVersionLinks { get; set; } = [];
     public string? WebsitesIdsJson { get; set; }

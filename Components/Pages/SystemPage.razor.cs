@@ -1,13 +1,18 @@
 using GameVault.Data;
 using GameVault.Data.Models;
+using GameVault.Components.Layout;
 using Microsoft.AspNetCore.Components;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
+using MudBlazor;
 
 namespace GameVault.Components.Pages;
 
 public partial class SystemPage
 {
+    [Inject]
+    private IDialogService DialogService { get; set; } = default!;
+
     [Parameter]
     public long PlatformId { get; set; }
 
@@ -185,5 +190,46 @@ public partial class SystemPage
         }
 
         CurrentVersionIndex = index;
+    }
+
+    private async Task OpenRomFolderSelector()
+    {
+        if (Platform == null)
+        {
+            return;
+        }
+
+        DialogParameters parameters = new()
+        {
+            ["Value"] = Platform.RomFolder ?? string.Empty
+        };
+
+        DialogOptions options = new()
+        {
+            CloseButton = false,
+            MaxWidth = MaxWidth.ExtraLarge,
+            FullWidth = true
+        };
+
+        IDialogReference dialog = await DialogService.ShowAsync<FolderSelectorModal>(string.Empty, parameters, options);
+        DialogResult? result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not string selectedFolder || string.IsNullOrWhiteSpace(selectedFolder))
+        {
+            return;
+        }
+
+        using AppDbContext context = await DbContextFactory.CreateDbContextAsync();
+        GVPlatform? platform = await context.Platforms.FirstOrDefaultAsync(p => p.Id == Platform.Id);
+        if (platform == null)
+        {
+            return;
+        }
+
+        platform.RomFolder = selectedFolder;
+        platform.UpdatedAt = DateTime.UtcNow;
+        await context.SaveChangesAsync();
+
+        Platform.RomFolder = selectedFolder;
+        StateHasChanged();
     }
 }
