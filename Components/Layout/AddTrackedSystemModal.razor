@@ -32,6 +32,24 @@
 
                 @if (SelectedPlatform != null)
                 {
+                    <MudStack Spacing="2" Class="mb-3">
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                            <MudTextField T="string" Label="ROM Folder" Value="@RomFolderInput" ReadOnly="true" FullWidth="true" />
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.FolderOpen" OnClick="OpenRomFolderSelector">
+                                Browse
+                            </MudButton>
+                        </MudStack>
+
+                        
+                        <MudTextField T="string"
+                                      Label="ROM Types"
+                                      @bind-Value="RomTypesInput"
+                                      FullWidth="true" />
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                            Enter ROM file extensions, separated by commas (e.g. .iso, .chd, .bin)
+                        </MudText>
+                    </MudStack>
+
                     <MudPaper Class="pa-4 mt-2" Elevation="1">
                         <MudGrid>
                             <MudItem xs="12" md="4">

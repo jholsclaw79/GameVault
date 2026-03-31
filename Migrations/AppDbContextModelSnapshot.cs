@@ -516,6 +516,9 @@ namespace GameVault.Migrations
                     b.Property<string>("RomFolder")
                         .HasColumnType("longtext");
 
+                    b.Property<string>("RomTypes")
+                        .HasColumnType("longtext");
+
                     b.Property<string>("Slug")
                         .HasColumnType("longtext");
 

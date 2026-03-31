@@ -192,7 +192,7 @@ public partial class SystemPage
         CurrentVersionIndex = index;
     }
 
-    private async Task OpenRomFolderSelector()
+    private async Task OpenEditSystemModal()
     {
         if (Platform == null)
         {
@@ -201,35 +201,28 @@ public partial class SystemPage
 
         DialogParameters parameters = new()
         {
-            ["Value"] = Platform.RomFolder ?? string.Empty
+            ["PlatformId"] = Platform.Id,
+            ["PlatformName"] = Platform.Name,
+            ["RomFolder"] = Platform.RomFolder,
+            ["RomTypes"] = Platform.RomTypes
         };
 
         DialogOptions options = new()
         {
             CloseButton = false,
-            MaxWidth = MaxWidth.ExtraLarge,
+            MaxWidth = MaxWidth.Medium,
             FullWidth = true
         };
 
-        IDialogReference dialog = await DialogService.ShowAsync<FolderSelectorModal>(string.Empty, parameters, options);
+        IDialogReference dialog = await DialogService.ShowAsync<EditSystemModal>(string.Empty, parameters, options);
         DialogResult? result = await dialog.Result;
-        if (result is null || result.Canceled || result.Data is not string selectedFolder || string.IsNullOrWhiteSpace(selectedFolder))
+        if (result is null || result.Canceled || result.Data is not EditSystemResult editResult)
         {
             return;
         }
-
-        using AppDbContext context = await DbContextFactory.CreateDbContextAsync();
-        GVPlatform? platform = await context.Platforms.FirstOrDefaultAsync(p => p.Id == Platform.Id);
-        if (platform == null)
-        {
-            return;
-        }
-
-        platform.RomFolder = selectedFolder;
-        platform.UpdatedAt = DateTime.UtcNow;
-        await context.SaveChangesAsync();
-
-        Platform.RomFolder = selectedFolder;
+        
+        Platform.RomFolder = editResult.RomFolder;
+        Platform.RomTypes = editResult.RomTypes;
         StateHasChanged();
     }
 }
