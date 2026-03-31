@@ -13,6 +13,17 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<GVPlatformVersion> PlatformVersions { get; set; }
     public DbSet<GVPlatformVersionReleaseDate> PlatformVersionReleaseDates { get; set; }
     public DbSet<GVPlatformPlatformVersion> PlatformPlatformVersions { get; set; }
+    public DbSet<GVGame> Games { get; set; }
+    public DbSet<GVGameCover> GameCovers { get; set; }
+    public DbSet<GVGameScreenshot> GameScreenshots { get; set; }
+    public DbSet<GVGameVideo> GameVideos { get; set; }
+    public DbSet<GVGenre> Genres { get; set; }
+    public DbSet<GVGameGenre> GameGenres { get; set; }
+    public DbSet<GVGameScreenshotLink> GameScreenshotLinks { get; set; }
+    public DbSet<GVGameVideoLink> GameVideoLinks { get; set; }
+    public DbSet<GVGameDlc> GameDlcs { get; set; }
+    public DbSet<GVGameExpandedGame> GameExpandedGames { get; set; }
+    public DbSet<GVGameExpansion> GameExpansions { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -143,6 +154,201 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .WithMany(platformVersion => platformVersion.PlatformLinks)
             .HasPrincipalKey(platformVersion => platformVersion.IGDBId)
             .HasForeignKey(link => link.PlatformVersionIGDBId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Configure Game
+        modelBuilder.Entity<GVGame>()
+            .HasKey(game => game.Id);
+
+        modelBuilder.Entity<GVGame>()
+            .HasIndex(game => game.IGDBId)
+            .IsUnique();
+
+        modelBuilder.Entity<GVGame>()
+            .Property(game => game.IsTracked)
+            .HasDefaultValue(false);
+
+        modelBuilder.Entity<GVGame>()
+            .HasIndex(game => game.CoverIGDBId);
+
+        modelBuilder.Entity<GVGame>()
+            .HasIndex(game => game.FranchiseIGDBId);
+
+        modelBuilder.Entity<GVGame>()
+            .HasIndex(game => game.GameStatusIGDBId);
+
+        modelBuilder.Entity<GVGame>()
+            .HasIndex(game => game.GameTypeIGDBId);
+
+        modelBuilder.Entity<GVGame>()
+            .HasIndex(game => game.ParentGameIGDBId);
+
+        modelBuilder.Entity<GVGame>()
+            .HasIndex(game => game.VersionParentIGDBId);
+
+        modelBuilder.Entity<GVGame>()
+            .HasOne(game => game.Cover)
+            .WithMany()
+            .HasPrincipalKey(cover => cover.IGDBId)
+            .HasForeignKey(game => game.CoverIGDBId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Configure GameCover
+        modelBuilder.Entity<GVGameCover>()
+            .HasKey(cover => cover.Id);
+
+        modelBuilder.Entity<GVGameCover>()
+            .HasIndex(cover => cover.IGDBId)
+            .IsUnique();
+
+        // Configure GameScreenshot
+        modelBuilder.Entity<GVGameScreenshot>()
+            .HasKey(screenshot => screenshot.Id);
+
+        modelBuilder.Entity<GVGameScreenshot>()
+            .HasIndex(screenshot => screenshot.IGDBId)
+            .IsUnique();
+
+        // Configure GameVideo
+        modelBuilder.Entity<GVGameVideo>()
+            .HasKey(video => video.Id);
+
+        modelBuilder.Entity<GVGameVideo>()
+            .HasIndex(video => video.IGDBId)
+            .IsUnique();
+
+        // Configure Genre
+        modelBuilder.Entity<GVGenre>()
+            .HasKey(genre => genre.Id);
+
+        modelBuilder.Entity<GVGenre>()
+            .HasIndex(genre => genre.IGDBId)
+            .IsUnique();
+
+        // Configure Game <-> Genre link table
+        modelBuilder.Entity<GVGameGenre>()
+            .HasKey(link => new { link.GameIGDBId, link.GenreIGDBId });
+
+        modelBuilder.Entity<GVGameGenre>()
+            .HasIndex(link => link.GenreIGDBId);
+
+        modelBuilder.Entity<GVGameGenre>()
+            .HasOne(link => link.Game)
+            .WithMany(game => game.GenreLinks)
+            .HasPrincipalKey(game => game.IGDBId)
+            .HasForeignKey(link => link.GameIGDBId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<GVGameGenre>()
+            .HasOne(link => link.Genre)
+            .WithMany()
+            .HasPrincipalKey(genre => genre.IGDBId)
+            .HasForeignKey(link => link.GenreIGDBId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Configure Game <-> Screenshot link table
+        modelBuilder.Entity<GVGameScreenshotLink>()
+            .HasKey(link => new { link.GameIGDBId, link.ScreenshotIGDBId });
+
+        modelBuilder.Entity<GVGameScreenshotLink>()
+            .HasIndex(link => link.ScreenshotIGDBId);
+
+        modelBuilder.Entity<GVGameScreenshotLink>()
+            .HasOne(link => link.Game)
+            .WithMany(game => game.ScreenshotLinks)
+            .HasPrincipalKey(game => game.IGDBId)
+            .HasForeignKey(link => link.GameIGDBId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<GVGameScreenshotLink>()
+            .HasOne(link => link.Screenshot)
+            .WithMany()
+            .HasPrincipalKey(screenshot => screenshot.IGDBId)
+            .HasForeignKey(link => link.ScreenshotIGDBId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Configure Game <-> Video link table
+        modelBuilder.Entity<GVGameVideoLink>()
+            .HasKey(link => new { link.GameIGDBId, link.VideoIGDBId });
+
+        modelBuilder.Entity<GVGameVideoLink>()
+            .HasIndex(link => link.VideoIGDBId);
+
+        modelBuilder.Entity<GVGameVideoLink>()
+            .HasOne(link => link.Game)
+            .WithMany(game => game.VideoLinks)
+            .HasPrincipalKey(game => game.IGDBId)
+            .HasForeignKey(link => link.GameIGDBId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<GVGameVideoLink>()
+            .HasOne(link => link.Video)
+            .WithMany()
+            .HasPrincipalKey(video => video.IGDBId)
+            .HasForeignKey(link => link.VideoIGDBId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Configure Game -> DLC link table
+        modelBuilder.Entity<GVGameDlc>()
+            .HasKey(link => new { link.GameIGDBId, link.DlcIGDBId });
+
+        modelBuilder.Entity<GVGameDlc>()
+            .HasIndex(link => link.DlcIGDBId);
+
+        modelBuilder.Entity<GVGameDlc>()
+            .HasOne(link => link.Game)
+            .WithMany(game => game.DlcLinks)
+            .HasPrincipalKey(game => game.IGDBId)
+            .HasForeignKey(link => link.GameIGDBId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<GVGameDlc>()
+            .HasOne(link => link.Dlc)
+            .WithMany()
+            .HasPrincipalKey(game => game.IGDBId)
+            .HasForeignKey(link => link.DlcIGDBId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Configure Game -> ExpandedGame link table
+        modelBuilder.Entity<GVGameExpandedGame>()
+            .HasKey(link => new { link.GameIGDBId, link.ExpandedGameIGDBId });
+
+        modelBuilder.Entity<GVGameExpandedGame>()
+            .HasIndex(link => link.ExpandedGameIGDBId);
+
+        modelBuilder.Entity<GVGameExpandedGame>()
+            .HasOne(link => link.Game)
+            .WithMany(game => game.ExpandedGameLinks)
+            .HasPrincipalKey(game => game.IGDBId)
+            .HasForeignKey(link => link.GameIGDBId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<GVGameExpandedGame>()
+            .HasOne(link => link.ExpandedGame)
+            .WithMany()
+            .HasPrincipalKey(game => game.IGDBId)
+            .HasForeignKey(link => link.ExpandedGameIGDBId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Configure Game -> Expansion link table
+        modelBuilder.Entity<GVGameExpansion>()
+            .HasKey(link => new { link.GameIGDBId, link.ExpansionIGDBId });
+
+        modelBuilder.Entity<GVGameExpansion>()
+            .HasIndex(link => link.ExpansionIGDBId);
+
+        modelBuilder.Entity<GVGameExpansion>()
+            .HasOne(link => link.Game)
+            .WithMany(game => game.ExpansionLinks)
+            .HasPrincipalKey(game => game.IGDBId)
+            .HasForeignKey(link => link.GameIGDBId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<GVGameExpansion>()
+            .HasOne(link => link.Expansion)
+            .WithMany()
+            .HasPrincipalKey(game => game.IGDBId)
+            .HasForeignKey(link => link.ExpansionIGDBId)
             .OnDelete(DeleteBehavior.Cascade);
     }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

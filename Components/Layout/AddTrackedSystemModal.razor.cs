@@ -1,5 +1,6 @@
 using GameVault.Data;
 using GameVault.Data.Models;
+using GameVault.Components.Layout;
 using Microsoft.AspNetCore.Components;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor;
@@ -13,6 +14,9 @@ public partial class AddTrackedSystemModal : ComponentBase
 
     [Inject]
     private IDbContextFactory<AppDbContext> DbContextFactory { get; set; } = default!;
+    
+    [Inject]
+    private IDialogService DialogService { get; set; } = default!;
 
     private List<GVPlatform> AvailablePlatforms { get; set; } = new();
     private GVPlatform? SelectedPlatform { get; set; }
@@ -20,6 +24,8 @@ public partial class AddTrackedSystemModal : ComponentBase
     private bool IsLoading { get; set; } = true;
     private bool IsSaving { get; set; }
     private string? ErrorMessage { get; set; }
+    private string RomFolderInput { get; set; } = string.Empty;
+    private string RomTypesInput { get; set; } = string.Empty;
 
     private bool CanAddSelected => SelectedPlatform != null && !SelectedPlatform.IsTracked;
 
@@ -65,7 +71,38 @@ public partial class AddTrackedSystemModal : ComponentBase
     {
         SelectedPlatformId = platformId;
         SelectedPlatform = AvailablePlatforms.FirstOrDefault(p => p.Id == platformId);
+        RomFolderInput = SelectedPlatform?.RomFolder ?? string.Empty;
+        RomTypesInput = SelectedPlatform?.RomTypes ?? string.Empty;
         return Task.CompletedTask;
+    }
+
+    private async Task OpenRomFolderSelector()
+    {
+        if (SelectedPlatform == null)
+        {
+            return;
+        }
+
+        DialogParameters parameters = new()
+        {
+            ["Value"] = RomFolderInput
+        };
+
+        DialogOptions options = new()
+        {
+            CloseButton = false,
+            MaxWidth = MaxWidth.Large,
+            FullWidth = true
+        };
+
+        IDialogReference dialog = await DialogService.ShowAsync<FolderSelectorModal>(string.Empty, parameters, options);
+        DialogResult? result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not string selectedFolder || string.IsNullOrWhiteSpace(selectedFolder))
+        {
+            return;
+        }
+
+        RomFolderInput = selectedFolder;
     }
 
     private async Task AddTrackedSystem()
@@ -89,6 +126,8 @@ public partial class AddTrackedSystemModal : ComponentBase
             }
 
             platform.IsTracked = true;
+            platform.RomFolder = string.IsNullOrWhiteSpace(RomFolderInput) ? null : RomFolderInput.Trim();
+            platform.RomTypes = string.IsNullOrWhiteSpace(RomTypesInput) ? null : RomTypesInput.Trim();
             platform.UpdatedAt = DateTime.UtcNow;
             await context.SaveChangesAsync();
 

@@ -1,0 +1,40 @@
+@using GameVault.Data.Models
+
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="2">
+            <MudText Typo="Typo.h5">Edit System</MudText>
+
+            @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Dense="true">@ErrorMessage</MudAlert>
+            }
+
+            <MudTextField T="string" Label="System" Value="@PlatformName" ReadOnly="true" FullWidth="true" />
+
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                <MudTextField T="string" Label="ROM Folder" Value="@RomFolderInput" ReadOnly="true" FullWidth="true" />
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.FolderOpen" OnClick="OpenRomFolderSelector">
+                    Browse
+                </MudButton>
+            </MudStack>
+
+            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                Use a comma delimited list like: *.iso,*.chd,*.bin
+            </MudText>
+
+            <MudTextField T="string"
+                          Label="ROM Types"
+                          @bind-Value="RomTypesInput"
+                          FullWidth="true" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="Close" Disabled="@IsSaving">
+            Cancel
+        </MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Save" Disabled="@IsSaving">
+            Save
+        </MudButton>
+    </DialogActions>
+</MudDialog>

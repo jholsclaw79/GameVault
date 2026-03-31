@@ -34,7 +34,19 @@ builder.Services
     .AddScoped<IGDBPlatformLogoService>()
     .AddScoped<IGDBPlatformVersionService>()
     .AddScoped<IGDBPlatformVersionReleaseDateService>()
-    .AddScoped<IGDBPlatformService>();
+    .AddScoped<IGDBPlatformService>()
+    .AddScoped<IGDBGameService>()
+    .AddScoped<IGDBGameCoverService>()
+    .AddScoped<IGDBGameScreenshotService>()
+    .AddScoped<IGDBGameVideoService>()
+    .AddScoped<IGDBGenreService>()
+    .AddScoped<IGDBGameDlcService>()
+    .AddScoped<IGDBGameExpandedGameService>()
+    .AddScoped<IGDBGameExpansionService>()
+    .AddScoped<IGDBGameGenreService>()
+    .AddScoped<IGDBGameScreenshotLinkService>()
+    .AddScoped<IGDBGameVideoLinkService>()
+    .AddScoped<IGDBGameGraphSyncService>();
 
 // Force mysql to use version 8.  Actual check is done in the AppDbContext file
 builder.Services.AddDbContextFactory<AppDbContext>(options => options.UseMySql(mySqlConnectionString, new MySqlServerVersion(new Version(8,0,0))));

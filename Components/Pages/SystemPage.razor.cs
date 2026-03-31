@@ -1,13 +1,18 @@
 using GameVault.Data;
 using GameVault.Data.Models;
+using GameVault.Components.Layout;
 using Microsoft.AspNetCore.Components;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
+using MudBlazor;
 
 namespace GameVault.Components.Pages;
 
 public partial class SystemPage
 {
+    [Inject]
+    private IDialogService DialogService { get; set; } = default!;
+
     [Parameter]
     public long PlatformId { get; set; }
 
@@ -185,5 +190,39 @@ public partial class SystemPage
         }
 
         CurrentVersionIndex = index;
+    }
+
+    private async Task OpenEditSystemModal()
+    {
+        if (Platform == null)
+        {
+            return;
+        }
+
+        DialogParameters parameters = new()
+        {
+            ["PlatformId"] = Platform.Id,
+            ["PlatformName"] = Platform.Name,
+            ["RomFolder"] = Platform.RomFolder,
+            ["RomTypes"] = Platform.RomTypes
+        };
+
+        DialogOptions options = new()
+        {
+            CloseButton = false,
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true
+        };
+
+        IDialogReference dialog = await DialogService.ShowAsync<EditSystemModal>(string.Empty, parameters, options);
+        DialogResult? result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not EditSystemResult editResult)
+        {
+            return;
+        }
+        
+        Platform.RomFolder = editResult.RomFolder;
+        Platform.RomTypes = editResult.RomTypes;
+        StateHasChanged();
     }
 }

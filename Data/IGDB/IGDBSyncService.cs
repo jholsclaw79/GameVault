@@ -55,12 +55,9 @@ public class IGDBSyncService(IDbContextFactory<AppDbContext> dbContextFactory, I
                     {
                         TGVModel updatedModel = mapToGVModel(igdbModel);
                         updatedModel.Id = existingModel.Id;
-                        PropertyInfo? localTrackedProp = typeof(TGVModel).GetProperty("IsTracked");
-                        if (localTrackedProp != null && localTrackedProp.PropertyType == typeof(bool))
-                        {
-                            object? existingTrackedValue = localTrackedProp.GetValue(existingModel);
-                            localTrackedProp.SetValue(updatedModel, existingTrackedValue);
-                        }
+                        PreserveLocalProperty(existingModel, updatedModel, "IsTracked", typeof(bool));
+                        PreserveLocalProperty(existingModel, updatedModel, "RomFolder", typeof(string));
+                        PreserveLocalProperty(existingModel, updatedModel, "RomTypes", typeof(string));
                         context.Entry(existingModel).CurrentValues.SetValues(updatedModel);
                         context.Update(existingModel);
                     }
@@ -91,5 +88,17 @@ public class IGDBSyncService(IDbContextFactory<AppDbContext> dbContextFactory, I
             Console.WriteLine($"Error syncing: {ex.Message}");
             return false;
         }
+    }
+
+    private static void PreserveLocalProperty<TGVModel>(TGVModel existingModel, TGVModel updatedModel, string propertyName, Type expectedType)
+    {
+        PropertyInfo? property = typeof(TGVModel).GetProperty(propertyName);
+        if (property == null || property.PropertyType != expectedType)
+        {
+            return;
+        }
+
+        object? existingValue = property.GetValue(existingModel);
+        property.SetValue(updatedModel, existingValue);
     }
 }

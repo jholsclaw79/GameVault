@@ -1,0 +1,33 @@
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="2">
+            <MudText Typo="Typo.h5">Choose Folder</MudText>
+            <MudTextField T="string" Label="Selected Folder" @bind-Value="_selectedFolder" Immediate="true" FullWidth="true" />
+            <MudPaper Outlined="true" Class="pa-2" Style="max-height: 420px; overflow-y: auto;">
+                <MudList T="string" Dense="true">
+                    @if (CanNavigateUp)
+                    {
+                        <MudListItem T="string" OnClick="@(() => SelectFolder(ParentFolderPath!))">
+                            ...
+                        </MudListItem>
+                    }
+
+                    @foreach (string path in CurrentDirectories)
+                    {
+                        <MudListItem T="string" OnClick="@(() => SelectFolder(path))">
+                            @path
+                        </MudListItem>
+                    }
+                </MudList>
+            </MudPaper>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="Close">
+            Close
+        </MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveFolder">
+            Select Folder
+        </MudButton>
+    </DialogActions>
+</MudDialog>
