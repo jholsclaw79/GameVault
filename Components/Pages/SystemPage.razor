@@ -20,10 +20,44 @@ else
 {
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
         <MudText Typo="Typo.h4">@Platform.Name</MudText>
-        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" OnClick="OpenEditSystemModal">
-            Edit System
-        </MudButton>
+        <MudStack Row="true" Spacing="1">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Success"
+                       StartIcon="@Icons.Material.Filled.PlayArrow"
+                       OnClick="ProcessGames"
+                       Disabled="@IsProcessingGames">
+                Process Games
+            </MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" OnClick="OpenEditSystemModal">
+                Edit System
+            </MudButton>
+        </MudStack>
     </MudStack>
+
+    @if (!string.IsNullOrWhiteSpace(ProcessResultMessage))
+    {
+        <MudAlert Class="mb-3" Severity="@(LastProcessSucceeded ? Severity.Success : Severity.Warning)" Dense="true">
+            @ProcessResultMessage
+        </MudAlert>
+    }
+    
+    @if (IsProcessingGames || !string.IsNullOrWhiteSpace(CurrentProcessStep))
+    {
+        <MudPaper Class="pa-3 mb-3" Outlined="true">
+            <MudText Typo="Typo.body2" Class="mb-1">
+                @(string.IsNullOrWhiteSpace(CurrentProcessStep) ? "Preparing..." : CurrentProcessStep)
+            </MudText>
+            @if (CurrentProcessPercent.HasValue)
+            {
+                <MudProgressLinear Color="Color.Info" Value="@CurrentProcessPercent.Value" />
+                <MudText Typo="Typo.caption" Class="mt-1">@CurrentProcessPercent.Value%</MudText>
+            }
+            else
+            {
+                <MudProgressLinear Color="Color.Info" Indeterminate="true" />
+            }
+        </MudPaper>
+    }
 
     <MudText Typo="Typo.body2" Class="mb-3">
         <b>ROM Folder:</b> @(string.IsNullOrWhiteSpace(Platform.RomFolder) ? "Not set" : Platform.RomFolder)
