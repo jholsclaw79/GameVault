@@ -325,6 +325,7 @@ public partial class SystemPage
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"[SystemPage] ProcessGames failed: {ex}");
             LastProcessSucceeded = false;
             ProcessResultMessage = $"Failed to process games: {ex.Message}";
             CurrentProcessStep = "Failed.";

@@ -23,24 +23,36 @@ public class SystemGameProcessingService(
     {
         Console.WriteLine($"[SystemGameProcessing] Starting platform processing: platformId={platformId}");
         ReportProgress(progress, "Loading platform configuration...", 2);
-        using AppDbContext context = await dbContextFactory.CreateDbContextAsync(cancellationToken);
-        GVPlatform? platform = await context.Platforms.FirstOrDefaultAsync(p => p.Id == platformId && p.IsTracked, cancellationToken);
-        if (platform == null)
+        PlatformProcessConfig? platformConfig;
+        await using (AppDbContext context = await dbContextFactory.CreateDbContextAsync(cancellationToken))
         {
-            Console.WriteLine($"[SystemGameProcessing] Failed: tracked platform not found. platformId={platformId}");
-            return SystemGameProcessingResult.Failure("Tracked system not found.");
+            GVPlatform? platform = await context.Platforms.FirstOrDefaultAsync(p => p.Id == platformId && p.IsTracked, cancellationToken);
+            if (platform == null)
+            {
+                Console.WriteLine($"[SystemGameProcessing] Failed: tracked platform not found. platformId={platformId}");
+                return SystemGameProcessingResult.Failure("Tracked system not found.");
+            }
+
+            platformConfig = new PlatformProcessConfig
+            {
+                PlatformId = platform.Id,
+                PlatformIGDBId = platform.IGDBId,
+                Name = platform.Name,
+                RomFolder = platform.RomFolder,
+                RomTypes = platform.RomTypes
+            };
         }
 
-        if (string.IsNullOrWhiteSpace(platform.RomFolder) || !Directory.Exists(platform.RomFolder))
+        if (string.IsNullOrWhiteSpace(platformConfig.RomFolder) || !Directory.Exists(platformConfig.RomFolder))
         {
-            Console.WriteLine($"[SystemGameProcessing] Failed: ROM folder missing/invalid. platform={platform.Name}, folder={platform.RomFolder}");
+            Console.WriteLine($"[SystemGameProcessing] Failed: ROM folder missing/invalid. platform={platformConfig.Name}, folder={platformConfig.RomFolder}");
             return SystemGameProcessingResult.Failure("ROM folder is not configured or does not exist.");
         }
 
-        List<string> filePatterns = ParseFilePatterns(platform.RomTypes);
+        List<string> filePatterns = ParseFilePatterns(platformConfig.RomTypes);
         if (filePatterns.Count == 0)
         {
-            Console.WriteLine($"[SystemGameProcessing] Failed: ROM types not configured. platform={platform.Name}");
+            Console.WriteLine($"[SystemGameProcessing] Failed: ROM types not configured. platform={platformConfig.Name}");
             return SystemGameProcessingResult.Failure("ROM types are not configured.");
         }
 
@@ -57,21 +69,24 @@ public class SystemGameProcessingService(
         Console.WriteLine($"[SystemGameProcessing] IGDB filter IDs resolved: mainGameTypeId={(mainGameTypeId?.ToString() ?? "null")}, releasedStatusId={(releasedStatusId?.ToString() ?? "null")}");
 
         ReportProgress(progress, "Syncing released main games from IGDB...", 10);
-        List<Game> igdbGames = await FetchPlatformGamesAsync(client, platform.IGDBId, mainGameTypeId, releasedStatusId, cancellationToken);
-        Console.WriteLine($"[SystemGameProcessing] IGDB fetch complete: platform={platform.Name}, games={igdbGames.Count}");
+        List<Game> igdbGames = await FetchPlatformGamesAsync(client, platformConfig.PlatformIGDBId, mainGameTypeId, releasedStatusId, cancellationToken);
+        Console.WriteLine($"[SystemGameProcessing] IGDB fetch complete: platform={platformConfig.Name}, games={igdbGames.Count}");
         if (igdbGames.Count == 0)
         {
-            Console.WriteLine($"[SystemGameProcessing] Aborting ROM scan because IGDB returned 0 games for platform {platform.Name} ({platform.IGDBId}).");
+            Console.WriteLine($"[SystemGameProcessing] Aborting ROM scan because IGDB returned 0 games for platform {platformConfig.Name} ({platformConfig.PlatformIGDBId}).");
             return SystemGameProcessingResult.Failure("IGDB returned zero games for this platform/filter. ROM scanning was skipped to avoid creating incorrect local game IDs.");
         }
 
         ReportProgress(progress, "Saving IGDB games and related assets...", 25);
-        await UpsertGamesAndAssetsAsync(context, igdbGames, cancellationToken);
-        await context.SaveChangesAsync(cancellationToken);
+        await using (AppDbContext context = await dbContextFactory.CreateDbContextAsync(cancellationToken))
+        {
+            await UpsertGamesAndAssetsAsync(context, igdbGames, cancellationToken);
+            await context.SaveChangesAsync(cancellationToken);
+        }
 
         ReportProgress(progress, "Enumerating ROM files from configured folder...", 35);
-        List<string> files = EnumerateFiles(platform.RomFolder, filePatterns);
-        Console.WriteLine($"[SystemGameProcessing] ROM file enumeration complete: folder={platform.RomFolder}, files={files.Count}");
+        List<string> files = EnumerateFiles(platformConfig.RomFolder!, filePatterns);
+        Console.WriteLine($"[SystemGameProcessing] ROM file enumeration complete: folder={platformConfig.RomFolder}, files={files.Count}");
 
         ReportProgress(progress, "Scanning ROM files (MD5/SHA1 + Hasheous lookup)...", files.Count == 0 ? 80 : 40);
         List<RomScanItem> scanItems = await BuildRomScanItemsAsync(files, progress, cancellationToken);
@@ -85,14 +100,27 @@ public class SystemGameProcessingService(
         if (matchedIgdbIds.Count > 0)
         {
             ReportProgress(progress, "Syncing missing matched IGDB games...", 82);
+            await using AppDbContext context = await dbContextFactory.CreateDbContextAsync(cancellationToken);
             await EnsureMatchedGamesAreSyncedAsync(context, client, matchedIgdbIds, cancellationToken);
+            await context.SaveChangesAsync(cancellationToken);
         }
 
         ReportProgress(progress, "Saving ROM hashes and file mappings...", 92);
-        int unmatchedCount = await UpsertRomRowsAsync(context, platform, scanItems, cancellationToken);
-        await context.SaveChangesAsync(cancellationToken);
+        int unmatchedCount;
+        await using (AppDbContext context = await dbContextFactory.CreateDbContextAsync(cancellationToken))
+        {
+            GVPlatform? trackedPlatform = await context.Platforms
+                .FirstOrDefaultAsync(p => p.IGDBId == platformConfig.PlatformIGDBId && p.IsTracked, cancellationToken);
+            if (trackedPlatform == null)
+            {
+                return SystemGameProcessingResult.Failure("Tracked system not found.");
+            }
 
-        Console.WriteLine($"[SystemGameProcessing] Completed platform processing: platform={platform.Name}, igdbGames={igdbGames.Count}, roms={scanItems.Count}, matched={scanItems.Count - unmatchedCount}, unmatched={unmatchedCount}");
+            unmatchedCount = await UpsertRomRowsAsync(context, trackedPlatform, scanItems, cancellationToken);
+            await context.SaveChangesAsync(cancellationToken);
+        }
+
+        Console.WriteLine($"[SystemGameProcessing] Completed platform processing: platform={platformConfig.Name}, igdbGames={igdbGames.Count}, roms={scanItems.Count}, matched={scanItems.Count - unmatchedCount}, unmatched={unmatchedCount}");
         ReportProgress(progress, "Completed game processing.", 100);
 
         return SystemGameProcessingResult.Success(
@@ -359,9 +387,43 @@ public class SystemGameProcessingService(
             return;
         }
 
-        List<long> gameIds = games.Select(game => game.Id!.Value).Distinct().ToList();
+        List<Game> uniqueGames = games
+            .Where(game => game.Id.HasValue && game.Id.Value > 0)
+            .GroupBy(game => game.Id!.Value)
+            .Select(group => group.First())
+            .ToList();
+        if (uniqueGames.Count == 0)
+        {
+            return;
+        }
 
-        Dictionary<long, GVGame> existingGames = context.ChangeTracker
+        IGDBClient? client = igdbService.Client;
+        HashSet<long> requestedCoverIds = uniqueGames
+            .Select(game => game.Cover?.Id ?? game.Cover?.Value?.Id)
+            .Where(id => id.HasValue && id.Value > 0)
+            .Select(id => id!.Value)
+            .ToHashSet();
+
+        if (client != null && requestedCoverIds.Count > 0)
+        {
+            await UpsertCoversAsync(context, client, requestedCoverIds, cancellationToken);
+        }
+
+        HashSet<long> trackedCoverIds = context.ChangeTracker
+            .Entries<GVGameCover>()
+            .Where(entry => entry.State != EntityState.Detached && entry.State != EntityState.Deleted)
+            .Select(entry => entry.Entity.IGDBId)
+            .ToHashSet();
+        HashSet<long> persistedCoverIds = await context.GameCovers
+            .AsNoTracking()
+            .Where(cover => requestedCoverIds.Contains(cover.IGDBId))
+            .Select(cover => cover.IGDBId)
+            .ToHashSetAsync(cancellationToken);
+        persistedCoverIds.UnionWith(trackedCoverIds);
+
+        List<long> gameIds = uniqueGames.Select(game => game.Id!.Value).ToList();
+
+        Dictionary<long, GVGame> trackedByIgdbId = context.ChangeTracker
             .Entries<GVGame>()
             .Where(entry => entry.State != EntityState.Detached)
             .Select(entry => entry.Entity)
@@ -369,48 +431,75 @@ public class SystemGameProcessingService(
             .GroupBy(game => game.IGDBId)
             .ToDictionary(group => group.Key, group => group.First());
 
-        List<long> idsNotTracked = gameIds
-            .Where(id => !existingGames.ContainsKey(id))
-            .ToList();
-
-        if (idsNotTracked.Count > 0)
-        {
-            Dictionary<long, GVGame> dbGames = await context.Games
-                .Where(game => idsNotTracked.Contains(game.IGDBId))
-                .ToDictionaryAsync(game => game.IGDBId, cancellationToken);
-
-            foreach ((long id, GVGame dbGame) in dbGames)
+        Dictionary<long, ExistingGameSnapshot> dbGames = await context.Games
+            .AsNoTracking()
+            .Where(game => gameIds.Contains(game.IGDBId))
+            .Select(game => new ExistingGameSnapshot
             {
-                existingGames[id] = dbGame;
-            }
-        }
+                Id = game.Id,
+                IGDBId = game.IGDBId,
+                IsTracked = game.IsTracked
+            })
+            .ToDictionaryAsync(game => game.IGDBId, cancellationToken);
 
-        foreach (Game game in games)
+        foreach (Game game in uniqueGames)
         {
             long gameId = game.Id!.Value;
             GVGame mapped = MapToGVGame(game);
             mapped.IsTracked = true;
             mapped.IsLocalOnly = false;
+            if (mapped.CoverIGDBId.HasValue && !persistedCoverIds.Contains(mapped.CoverIGDBId.Value))
+            {
+                mapped.CoverIGDBId = null;
+            }
             Console.WriteLine($"[SystemGameProcessing] Upserting IGDB game: id={mapped.IGDBId}, name={mapped.Name}");
 
-            if (existingGames.TryGetValue(gameId, out GVGame? existing))
+            if (trackedByIgdbId.TryGetValue(gameId, out GVGame? existing))
             {
                 mapped.Id = existing.Id;
                 mapped.IsTracked = existing.IsTracked || mapped.IsTracked;
                 context.Entry(existing).CurrentValues.SetValues(mapped);
             }
+            else if (dbGames.TryGetValue(gameId, out ExistingGameSnapshot? snapshot))
+            {
+                GVGame? trackedByPrimaryKey = context.ChangeTracker
+                    .Entries<GVGame>()
+                    .Where(entry => entry.State != EntityState.Detached)
+                    .Select(entry => entry.Entity)
+                    .FirstOrDefault(tracked => tracked.Id == snapshot.Id);
+
+                if (trackedByPrimaryKey == null)
+                {
+                    trackedByPrimaryKey = new GVGame
+                    {
+                        Id = snapshot.Id,
+                        IGDBId = snapshot.IGDBId,
+                        Name = mapped.Name,
+                        IsTracked = snapshot.IsTracked,
+                        IsLocalOnly = false,
+                        CreatedAt = mapped.CreatedAt,
+                        UpdatedAt = mapped.UpdatedAt
+                    };
+                    context.Games.Attach(trackedByPrimaryKey);
+                }
+
+                mapped.Id = trackedByPrimaryKey.Id;
+                mapped.IsTracked = trackedByPrimaryKey.IsTracked || mapped.IsTracked;
+                context.Entry(trackedByPrimaryKey).CurrentValues.SetValues(mapped);
+                trackedByIgdbId[gameId] = trackedByPrimaryKey;
+            }
             else
             {
                 context.Games.Add(mapped);
-                existingGames[gameId] = mapped;
+                trackedByIgdbId[gameId] = mapped;
             }
         }
 
-        await UpsertAssetsAsync(context, games, cancellationToken);
-        await UpsertLinksAsync(context, games, cancellationToken);
+        await UpsertAssetsAsync(context, uniqueGames, cancellationToken, includeCovers: false);
+        await UpsertLinksAsync(context, uniqueGames, cancellationToken);
     }
 
-    private async Task UpsertAssetsAsync(AppDbContext context, List<Game> games, CancellationToken cancellationToken)
+    private async Task UpsertAssetsAsync(AppDbContext context, List<Game> games, CancellationToken cancellationToken, bool includeCovers = true)
     {
         IGDBClient? client = igdbService.Client;
         if (client == null)
@@ -423,7 +512,10 @@ public class SystemGameProcessingService(
         HashSet<long> videoIds = games.SelectMany(game => game.Videos?.Ids ?? []).Where(id => id > 0).ToHashSet();
         HashSet<long> genreIds = games.SelectMany(game => game.Genres?.Ids ?? []).Where(id => id > 0).ToHashSet();
 
-        await UpsertCoversAsync(context, client, coverIds, cancellationToken);
+        if (includeCovers)
+        {
+            await UpsertCoversAsync(context, client, coverIds, cancellationToken);
+        }
         await UpsertScreenshotsAsync(context, client, screenshotIds, cancellationToken);
         await UpsertVideosAsync(context, client, videoIds, cancellationToken);
         await UpsertGenresAsync(context, client, genreIds, cancellationToken);
@@ -929,6 +1021,22 @@ public class SystemGameProcessingService(
         public required string Sha1 { get; set; }
         public long FileSizeBytes { get; set; }
         public long? MatchedIGDBId { get; set; }
+    }
+
+    private sealed class PlatformProcessConfig
+    {
+        public long PlatformId { get; set; }
+        public long PlatformIGDBId { get; set; }
+        public required string Name { get; set; }
+        public string? RomFolder { get; set; }
+        public string? RomTypes { get; set; }
+    }
+
+    private sealed class ExistingGameSnapshot
+    {
+        public long Id { get; set; }
+        public long IGDBId { get; set; }
+        public bool IsTracked { get; set; }
     }
 }
 
