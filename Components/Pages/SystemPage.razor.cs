@@ -31,6 +31,9 @@ public partial class SystemPage
     private int? CurrentProcessPercent { get; set; }
     private bool LastProcessSucceeded { get; set; }
     private int CurrentVersionIndex { get; set; }
+    private List<GVGame> MatchedGames { get; set; } = [];
+    private List<GVGame> MissingGames { get; set; } = [];
+    private List<GVGame> UnknownGames { get; set; } = [];
     private bool HasSingleVersion => PlatformVersions.Count == 1;
     private bool HasMultipleVersions => PlatformVersions.Count > 1;
     private GVPlatformVersion? CurrentVersion =>
@@ -54,6 +57,7 @@ public partial class SystemPage
             .FirstOrDefaultAsync(p => p.Id == PlatformId && p.IsTracked);
 
         PlatformVersions = await LoadPlatformVersionsAsync(context, Platform?.IGDBId, Platform?.VersionsIdsJson);
+        (MatchedGames, MissingGames, UnknownGames) = await LoadCategorizedPlatformGamesAsync(context, Platform?.IGDBId);
         if (PlatformVersions.Count == 0)
         {
             CurrentVersionIndex = 0;
@@ -131,6 +135,47 @@ public partial class SystemPage
     private string? GetPlatformVersionLogoUrl(GVPlatformVersion platformVersion)
     {
         return NormalizeLogoUrl(platformVersion.PlatformLogo?.Url);
+    }
+
+    private async Task<(List<GVGame> matched, List<GVGame> missing, List<GVGame> unknown)> LoadCategorizedPlatformGamesAsync(AppDbContext context, long? platformIgdbId)
+    {
+        if (platformIgdbId == null)
+        {
+            return ([], [], []);
+        }
+
+        List<GVGame> romMappedGames = await context.Games
+            .Where(game => game.RomFiles.Any(rom => rom.PlatformIGDBId == platformIgdbId.Value))
+            .Include(game => game.Cover)
+            .OrderBy(game => game.Name)
+            .ToListAsync();
+
+        List<GVGame> matched = romMappedGames
+            .Where(game => game.IGDBId > 0 && !game.IsLocalOnly)
+            .ToList();
+
+        List<GVGame> unknown = romMappedGames
+            .Where(game => game.IGDBId <= 0 || game.IsLocalOnly)
+            .ToList();
+
+        List<GVGame> platformIgdbGames = await context.Games
+            .Where(game => game.IGDBId > 0 && !game.IsLocalOnly && !string.IsNullOrWhiteSpace(game.PlatformsIdsJson))
+            .Include(game => game.Cover)
+            .ToListAsync();
+
+        HashSet<long> matchedIds = matched.Select(game => game.IGDBId).ToHashSet();
+        List<GVGame> missing = platformIgdbGames
+            .Where(game => !matchedIds.Contains(game.IGDBId) && GameHasPlatform(game, platformIgdbId.Value))
+            .OrderBy(game => game.Name)
+            .ToList();
+
+        return (matched, missing, unknown);
+    }
+
+    private static bool GameHasPlatform(GVGame game, long platformIgdbId)
+    {
+        List<long>? platformIds = DeserializeIds(game.PlatformsIdsJson);
+        return platformIds?.Contains(platformIgdbId) == true;
     }
 
     private static List<GVPlatformVersion> SortVersions(List<GVPlatformVersion> versions)
@@ -270,11 +315,17 @@ public partial class SystemPage
                 : result.Message;
             CurrentProcessStep = result.IsSuccess ? "Completed." : "Failed.";
             CurrentProcessPercent = result.IsSuccess ? 100 : CurrentProcessPercent;
+            if (result.IsSuccess)
+            {
+                using AppDbContext context = await DbContextFactory.CreateDbContextAsync();
+                (MatchedGames, MissingGames, UnknownGames) = await LoadCategorizedPlatformGamesAsync(context, Platform.IGDBId);
+            }
 
             Snackbar.Add(ProcessResultMessage, result.IsSuccess ? Severity.Success : Severity.Warning);
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"[SystemPage] ProcessGames failed: {ex}");
             LastProcessSucceeded = false;
             ProcessResultMessage = $"Failed to process games: {ex.Message}";
             CurrentProcessStep = "Failed.";

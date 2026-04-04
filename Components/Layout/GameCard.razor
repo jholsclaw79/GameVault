@@ -1,0 +1,23 @@
+@using GameVault.Data.Models
+
+<MudPaper Outlined="true"
+          Style="width: 184px; min-width: 184px; max-width: 184px; height: 320px; min-height: 320px; max-height: 320px; margin: 0 auto; overflow: hidden; display: grid; grid-template-rows: 224px 96px; box-sizing: border-box;">
+    <div style="display: flex; align-items: center; justify-content: center; background: var(--mud-palette-surface); padding: 0.4rem; height: 224px; box-sizing: border-box;">
+        <div style="width: 100%; height: 100%; border: 18px solid var(--mud-palette-surface); background: var(--mud-palette-surface); display: flex; align-items: center; justify-content: center; overflow: hidden; box-sizing: border-box;">
+            @if (!string.IsNullOrWhiteSpace(CoverUrl))
+            {
+                <img src="@CoverUrl" alt="@Game.Name" style="width: 100%; height: 100%; max-width: none; max-height: none; object-fit: contain; display: block;" />
+            }
+            else
+            {
+                <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 4rem; font-weight: 700; line-height: 1;">?</div>
+            }
+        </div>
+    </div>
+    <div style="background: var(--mud-palette-surface); padding: 0.4rem 0.6rem; height: 96px; box-sizing: border-box;">
+        <MudText Typo="Typo.caption"
+                 Style="text-align: center; line-height: 1.35rem; min-height: 2.7rem; max-height: 2.7rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+            @Game.Name
+        </MudText>
+    </div>
+</MudPaper>

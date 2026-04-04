@@ -185,4 +185,61 @@ else
             </MudPaper>
         }
     }
+
+    <MudText Typo="Typo.h5" GutterBottom="true" Class="mt-4">Games</MudText>
+    <MudTabs Rounded="true" Elevation="1">
+        <MudTabPanel Text="@($"Matched ({MatchedGames.Count})")">
+            @if (!MatchedGames.Any())
+            {
+                <MudAlert Severity="Severity.Info" Dense="true">
+                    No matched games found for this system.
+                </MudAlert>
+            }
+            else
+            {
+                <div class="games-grid">
+                    @foreach (GVGame game in MatchedGames)
+                    {
+                        <GameCard Game="game" />
+                    }
+                </div>
+            }
+        </MudTabPanel>
+
+        <MudTabPanel Text="@($"Missing ({MissingGames.Count})")">
+            @if (!MissingGames.Any())
+            {
+                <MudAlert Severity="Severity.Info" Dense="true">
+                    No missing games found for this system.
+                </MudAlert>
+            }
+            else
+            {
+                <div class="games-grid">
+                    @foreach (GVGame game in MissingGames)
+                    {
+                        <GameCard Game="game" />
+                    }
+                </div>
+            }
+        </MudTabPanel>
+
+        <MudTabPanel Text="@($"Unknown ({UnknownGames.Count})")">
+            @if (!UnknownGames.Any())
+            {
+                <MudAlert Severity="Severity.Info" Dense="true">
+                    No unknown games found for this system.
+                </MudAlert>
+            }
+            else
+            {
+                <div class="games-grid">
+                    @foreach (GVGame game in UnknownGames)
+                    {
+                        <GameCard Game="game" />
+                    }
+                </div>
+            }
+        </MudTabPanel>
+    </MudTabs>
 }
