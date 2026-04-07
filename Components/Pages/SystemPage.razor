@@ -189,6 +189,9 @@ else
     <MudText Typo="Typo.h5" GutterBottom="true" Class="mt-4">Games</MudText>
     <MudTabs Rounded="true" Elevation="1">
         <MudTabPanel Text="@($"Matched ({MatchedGames.Count})")">
+            <MudAlert Severity="Severity.Info" Dense="true" Class="mb-2">
+                Verified games that exist in both the IGDB database and your library.
+            </MudAlert>
             @if (!MatchedGames.Any())
             {
                 <MudAlert Severity="Severity.Info" Dense="true">
@@ -207,6 +210,9 @@ else
         </MudTabPanel>
 
         <MudTabPanel Text="@($"Missing ({MissingGames.Count})")">
+            <MudAlert Severity="Severity.Info" Dense="true" Class="mb-2">
+                Games found in IGDB based on your filters, but not currently in your collection.
+            </MudAlert>
             @if (!MissingGames.Any())
             {
                 <MudAlert Severity="Severity.Info" Dense="true">
@@ -225,6 +231,9 @@ else
         </MudTabPanel>
 
         <MudTabPanel Text="@($"Unknown ({UnknownGames.Count})")">
+            <MudAlert Severity="Severity.Info" Dense="true" Class="mb-2">
+                Local files or manual entries that couldn't be linked to an IGDB profile.
+            </MudAlert>
             @if (!UnknownGames.Any())
             {
                 <MudAlert Severity="Severity.Info" Dense="true">
