@@ -1,0 +1,9 @@
+.game-cover-shell {
+    background-color: white;
+    min-height: 260px;
+}
+
+.game-cover-image {
+    max-height: 240px;
+    object-fit: contain;
+}

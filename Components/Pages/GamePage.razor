@@ -1,0 +1,136 @@
+@page "/games/{GameId:long}"
+@using GameVault.Data
+@using GameVault.Data.Models
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<AppDbContext> DbContextFactory
+
+<PageTitle>@(Game?.Name ?? "Game")</PageTitle>
+
+@if (IsLoading)
+{
+    <MudProgressCircular Color="Color.Info" Indeterminate="true" Size="Size.Large" />
+}
+else if (Game == null)
+{
+    <MudAlert Severity="Severity.Warning" Dense="true">
+        Game not found.
+    </MudAlert>
+}
+else
+{
+    <MudText Typo="Typo.h4" GutterBottom="true">@Game.Name</MudText>
+
+    <MudPaper Class="pa-4 mb-3">
+        <MudGrid>
+            <MudItem xs="12" md="3">
+                @if (!string.IsNullOrWhiteSpace(CoverUrl))
+                {
+                    <MudPaper Class="pa-3 d-flex align-center justify-center game-cover-shell" Outlined="true">
+                        <MudImage Src="@CoverUrl" Alt="@Game.Name" Fluid="true" Class="game-cover-image" />
+                    </MudPaper>
+                }
+                else
+                {
+                    <MudAlert Severity="Severity.Info" Dense="true">No cover art available</MudAlert>
+                }
+            </MudItem>
+            <MudItem xs="12" md="9">
+                <MudStack Row="true" Spacing="1" Class="mb-2" Style="flex-wrap: wrap;">
+                    <MudChip T="string" Color="@GetStatusColor()" Variant="Variant.Filled">@GameStatusLabel</MudChip>
+                    @if (Game.IsTracked)
+                    {
+                        <MudChip T="string" Color="Color.Success" Variant="Variant.Outlined">Tracked</MudChip>
+                    }
+                </MudStack>
+
+                <MudText Typo="Typo.body1"><b>IGDB ID:</b> @GetIgdbLabel()</MudText>
+                <MudText Typo="Typo.body1"><b>Release Date:</b> @GetReleaseDateLabel()</MudText>
+                <MudText Typo="Typo.body1"><b>Rating:</b> @GetRatingLabel()</MudText>
+                <MudText Typo="Typo.body1"><b>Total Rating:</b> @GetTotalRatingLabel()</MudText>
+                <MudText Typo="Typo.body1"><b>Slug:</b> @(Game.Slug ?? "N/A")</MudText>
+                <MudText Typo="Typo.body1"><b>URL:</b> @GetUrlLabel()</MudText>
+                <MudText Typo="Typo.body1"><b>Updated:</b> @Game.UpdatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</MudText>
+                @if (TotalPlatformCount > 0)
+                {
+                    <MudText Typo="Typo.body1"><b>Tracked Systems:</b> @CoveredPlatformCount of @TotalPlatformCount system(s) have ROMs.</MudText>
+                }
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudText Typo="Typo.h6" GutterBottom="true">Tracked Systems</MudText>
+    <MudPaper Class="pa-4 mb-3">
+        @if (TrackedSystems.Count == 0)
+        {
+            <MudText Typo="Typo.body2">No tracked systems found for this game.</MudText>
+        }
+        else
+        {
+            <MudTable Items="TrackedSystems" Dense="true" Hover="true" Breakpoint="Breakpoint.Sm">
+                <HeaderContent>
+                    <MudTh>System</MudTh>
+                    <MudTh>Status</MudTh>
+                    <MudTh>ROM Files</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="System">@context.PlatformName</MudTd>
+                    <MudTd DataLabel="Status">
+                        @if (context.HasRom)
+                        {
+                            <MudChip T="string" Color="Color.Success" Variant="Variant.Filled" Size="Size.Small">In Library</MudChip>
+                        }
+                        else
+                        {
+                            <MudChip T="string" Color="Color.Warning" Variant="Variant.Outlined" Size="Size.Small">Missing ROM</MudChip>
+                        }
+                    </MudTd>
+                    <MudTd DataLabel="ROM Files">
+                        @if (!context.HasRom)
+                        {
+                            <MudText Typo="Typo.caption">None</MudText>
+                        }
+                        else
+                        {
+                            <MudStack Spacing="0">
+                                @foreach (GVGameRom rom in context.RomFiles)
+                                {
+                                    <MudText Typo="Typo.caption">
+                                        @rom.FileName (@FormatFileSize(rom.FileSizeBytes))
+                                    </MudText>
+                                }
+                            </MudStack>
+                        }
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </MudPaper>
+
+    <MudText Typo="Typo.h6" GutterBottom="true">Summary</MudText>
+    <MudPaper Class="pa-4 mb-3">
+        <MudText Typo="Typo.body2">@(string.IsNullOrWhiteSpace(Game.Summary) ? "No summary available." : Game.Summary)</MudText>
+    </MudPaper>
+
+    <MudText Typo="Typo.h6" GutterBottom="true">Storyline</MudText>
+    <MudPaper Class="pa-4 mb-3">
+        <MudText Typo="Typo.body2">@(string.IsNullOrWhiteSpace(Game.Storyline) ? "No storyline available." : Game.Storyline)</MudText>
+    </MudPaper>
+
+    <MudText Typo="Typo.h6" GutterBottom="true">Genres</MudText>
+    <MudPaper Class="pa-4 mb-3">
+        @if (GenreNames.Count == 0)
+        {
+            <MudText Typo="Typo.body2">No genres available.</MudText>
+        }
+        else
+        {
+            <MudStack Row="true" Spacing="1" Style="flex-wrap: wrap;">
+                @foreach (string genre in GenreNames)
+                {
+                    <MudChip T="string" Color="Color.Primary" Variant="Variant.Outlined">@genre</MudChip>
+                }
+            </MudStack>
+        }
+    </MudPaper>
+
+}
