@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Collections;
+using System.Text.Json;
 using HasheousClient;
 using HasheousClient.Models;
 using HasheousClient.WebApp;
@@ -12,11 +13,31 @@ public class HasheousLookupService
     private static bool _isConfigured;
     private static readonly TimeSpan LookupTimeout = TimeSpan.FromSeconds(30);
     private readonly Hasheous _hasheousClient;
+    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly string? _playmatchApiUrl;
 
-    public HasheousLookupService()
+    public HasheousLookupService(IHttpClientFactory httpClientFactory)
     {
+        _httpClientFactory = httpClientFactory;
+        _playmatchApiUrl = Environment.GetEnvironmentVariable("PLAYMATCH_API_URL");
         EnsureConfigured();
         _hasheousClient = new Hasheous();
+    }
+
+    public async Task<long?> FindIgdbIdForRomAsync(string fileName, long fileSize, string md5, string sha1, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (!string.IsNullOrWhiteSpace(_playmatchApiUrl))
+        {
+            long? playmatchResult = await LookupByPlaymatchAsync(fileName, fileSize, md5, cancellationToken);
+            if (playmatchResult.HasValue)
+            {
+                return playmatchResult;
+            }
+        }
+
+        return await FindIgdbIdByHashAsync(md5, sha1, cancellationToken);
     }
 
     public Task<long?> FindIgdbIdByHashAsync(string md5, string sha1, CancellationToken cancellationToken = default)
@@ -92,16 +113,76 @@ public class HasheousLookupService
             return metadataIgdbId.Value;
         }
 
-        // Last fallback: legacy top-level game id fields (can be non-IGDB in some payloads).
-        long? fallbackId = TryReadPositiveLong(match, "GameId", "game_id", "Id");
-        if (fallbackId.HasValue)
-        {
-            Console.WriteLine($"[HasheousLookup] Falling back to top-level game id field: {fallbackId.Value}");
-            return fallbackId.Value;
-        }
-
         Console.WriteLine("[HasheousLookup] Could not extract IGDB ID from match payload.");
         return null;
+    }
+
+    private async Task<long?> LookupByPlaymatchAsync(string fileName, long fileSize, string md5, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(fileName) || string.IsNullOrWhiteSpace(md5) || string.IsNullOrWhiteSpace(_playmatchApiUrl))
+        {
+            return null;
+        }
+
+        string baseUrl = _playmatchApiUrl.Trim().TrimEnd('/');
+        string requestUrl =
+            $"{baseUrl}/api/identify/ids?fileName={Uri.EscapeDataString(fileName)}&fileSize={fileSize}&md5={Uri.EscapeDataString(md5)}";
+
+        try
+        {
+            using HttpClient client = _httpClientFactory.CreateClient();
+            using HttpResponseMessage response = await client.GetAsync(requestUrl, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                Console.WriteLine($"[PlaymatchLookup] Request failed: status={(int)response.StatusCode}, url={requestUrl}");
+                return null;
+            }
+
+            await using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            using JsonDocument json = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+
+            if (!json.RootElement.TryGetProperty("externalMetadata", out JsonElement metadataElement) ||
+                metadataElement.ValueKind != JsonValueKind.Array)
+            {
+                Console.WriteLine("[PlaymatchLookup] externalMetadata missing in response.");
+                return null;
+            }
+
+            foreach (JsonElement item in metadataElement.EnumerateArray())
+            {
+                string providerName = item.TryGetProperty("providerName", out JsonElement providerNameElement)
+                    ? providerNameElement.GetString() ?? string.Empty
+                    : string.Empty;
+
+                if (!providerName.Equals("IGDB", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                string providerId = item.TryGetProperty("providerId", out JsonElement providerIdElement)
+                    ? providerIdElement.GetString() ?? string.Empty
+                    : string.Empty;
+
+                if (long.TryParse(providerId, out long igdbId) && igdbId > 0)
+                {
+                    Console.WriteLine($"[PlaymatchLookup] Matched IGDB ID: {igdbId}");
+                    return igdbId;
+                }
+            }
+
+            Console.WriteLine("[PlaymatchLookup] No IGDB providerId found in externalMetadata.");
+            return null;
+        }
+        catch (OperationCanceledException)
+        {
+            Console.WriteLine("[PlaymatchLookup] Lookup cancelled.");
+            throw;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[PlaymatchLookup] Lookup failed: {ex.Message}");
+            return null;
+        }
     }
 
     private static long? TryExtractIgdbIdFromMetadata(object match)
