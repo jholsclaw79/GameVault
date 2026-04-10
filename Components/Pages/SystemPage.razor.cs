@@ -179,6 +179,17 @@ public partial class SystemPage
             .Include(game => game.Cover)
             .ToListAsync();
 
+        List<GVGame> physicallyOwnedMatches = platformIgdbGames
+            .Where(game => game.IsPhysicallyOwned && GameHasPlatform(game, platformIgdbId.Value))
+            .ToList();
+
+        matched = matched
+            .Concat(physicallyOwnedMatches)
+            .GroupBy(game => game.IGDBId)
+            .Select(group => group.First())
+            .OrderBy(game => game.Name)
+            .ToList();
+
         HashSet<long> matchedIds = matched.Select(game => game.IGDBId).ToHashSet();
         List<GVGame> missing = platformIgdbGames
             .Where(game => !matchedIds.Contains(game.IGDBId) && GameHasPlatform(game, platformIgdbId.Value))

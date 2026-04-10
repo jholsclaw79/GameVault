@@ -1,0 +1,49 @@
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="2">
+            <MudText Typo="Typo.h5">Edit Game</MudText>
+
+            @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Dense="true">@ErrorMessage</MudAlert>
+            }
+
+            <MudTextField T="string" Label="Game" Value="@GameName" ReadOnly="true" FullWidth="true" />
+
+            <MudNumericField T="long?"
+                             Label="IGDB ID"
+                             @bind-Value="IgdbIdInput"
+                             Min="1"
+                             FullWidth="true"
+                             Clearable="true" />
+
+            <MudSelect T="long?"
+                       Label="System (for ROM Location)"
+                       @bind-Value="SelectedPlatformIgdbId"
+                       FullWidth="true"
+                       Clearable="true">
+                @foreach (GameEditSystemOption option in SystemOptions)
+                {
+                    <MudSelectItem T="long?" Value="@option.PlatformIgdbId">@option.PlatformName</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudTextField T="string"
+                          Label="ROM Location"
+                          @bind-Value="RomLocationInput"
+                          FullWidth="true"
+                          Placeholder="/path/to/rom/file.ext" />
+
+            <MudCheckBox T="bool" @bind-Value="IsCompletedInput" Label="Completed" />
+            <MudCheckBox T="bool" @bind-Value="IsPhysicallyOwnedInput" Label="Physically Owned" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="Close" Disabled="@IsSaving">
+            Cancel
+        </MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Save" Disabled="@IsSaving">
+            Save
+        </MudButton>
+    </DialogActions>
+</MudDialog>

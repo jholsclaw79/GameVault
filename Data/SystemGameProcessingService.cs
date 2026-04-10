@@ -440,7 +440,9 @@ public class SystemGameProcessingService(
             {
                 Id = game.Id,
                 IGDBId = game.IGDBId,
-                IsTracked = game.IsTracked
+                IsTracked = game.IsTracked,
+                IsCompleted = game.IsCompleted,
+                IsPhysicallyOwned = game.IsPhysicallyOwned
             })
             .ToDictionaryAsync(game => game.IGDBId, cancellationToken);
 
@@ -460,6 +462,8 @@ public class SystemGameProcessingService(
             {
                 mapped.Id = existing.Id;
                 mapped.IsTracked = existing.IsTracked || mapped.IsTracked;
+                mapped.IsCompleted = existing.IsCompleted;
+                mapped.IsPhysicallyOwned = existing.IsPhysicallyOwned;
                 context.Entry(existing).CurrentValues.SetValues(mapped);
             }
             else if (dbGames.TryGetValue(gameId, out ExistingGameSnapshot? snapshot))
@@ -478,6 +482,8 @@ public class SystemGameProcessingService(
                         IGDBId = snapshot.IGDBId,
                         Name = mapped.Name,
                         IsTracked = snapshot.IsTracked,
+                        IsCompleted = snapshot.IsCompleted,
+                        IsPhysicallyOwned = snapshot.IsPhysicallyOwned,
                         IsLocalOnly = false,
                         CreatedAt = mapped.CreatedAt,
                         UpdatedAt = mapped.UpdatedAt
@@ -487,6 +493,8 @@ public class SystemGameProcessingService(
 
                 mapped.Id = trackedByPrimaryKey.Id;
                 mapped.IsTracked = trackedByPrimaryKey.IsTracked || mapped.IsTracked;
+                mapped.IsCompleted = trackedByPrimaryKey.IsCompleted;
+                mapped.IsPhysicallyOwned = trackedByPrimaryKey.IsPhysicallyOwned;
                 context.Entry(trackedByPrimaryKey).CurrentValues.SetValues(mapped);
                 trackedByIgdbId[gameId] = trackedByPrimaryKey;
             }
@@ -1083,6 +1091,8 @@ public class SystemGameProcessingService(
         public long Id { get; set; }
         public long IGDBId { get; set; }
         public bool IsTracked { get; set; }
+        public bool IsCompleted { get; set; }
+        public bool IsPhysicallyOwned { get; set; }
     }
 }
 

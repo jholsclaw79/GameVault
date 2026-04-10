@@ -174,6 +174,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasDefaultValue(false);
 
         modelBuilder.Entity<GVGame>()
+            .Property(game => game.IsCompleted)
+            .HasDefaultValue(false);
+
+        modelBuilder.Entity<GVGame>()
+            .Property(game => game.IsPhysicallyOwned)
+            .HasDefaultValue(false);
+
+        modelBuilder.Entity<GVGame>()
             .HasIndex(game => game.CoverIGDBId);
 
         modelBuilder.Entity<GVGame>()
