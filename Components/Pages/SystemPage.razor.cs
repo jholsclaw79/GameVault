@@ -30,6 +30,7 @@ public partial class SystemPage
     private string? CurrentProcessStep { get; set; }
     private int? CurrentProcessPercent { get; set; }
     private bool LastProcessSucceeded { get; set; }
+    private long? LastLoadedPlatformId { get; set; }
     private int CurrentVersionIndex { get; set; }
     private List<GVGame> MatchedGames { get; set; } = [];
     private List<GVGame> MissingGames { get; set; } = [];
@@ -48,6 +49,12 @@ public partial class SystemPage
 
     protected override async Task OnParametersSetAsync()
     {
+        if (LastLoadedPlatformId != PlatformId)
+        {
+            ResetProcessingUiState();
+            LastLoadedPlatformId = PlatformId;
+        }
+
         IsLoading = true;
         using AppDbContext context = await DbContextFactory.CreateDbContextAsync();
         Platform = await context.Platforms
@@ -67,6 +74,15 @@ public partial class SystemPage
             CurrentVersionIndex = Math.Clamp(CurrentVersionIndex, 0, PlatformVersions.Count - 1);
         }
         IsLoading = false;
+    }
+
+    private void ResetProcessingUiState()
+    {
+        IsProcessingGames = false;
+        ProcessResultMessage = null;
+        CurrentProcessStep = null;
+        CurrentProcessPercent = null;
+        LastProcessSucceeded = true;
     }
 
     private async Task<List<GVPlatformVersion>> LoadPlatformVersionsAsync(AppDbContext context, long? platformIgdbId, string? versionsIdsJson)
@@ -289,6 +305,8 @@ public partial class SystemPage
             return;
         }
 
+        long processingPlatformId = Platform.Id;
+
         try
         {
             IsProcessingGames = true;
@@ -302,6 +320,11 @@ public partial class SystemPage
             {
                 await InvokeAsync(() =>
                 {
+                    if (PlatformId != processingPlatformId)
+                    {
+                        return;
+                    }
+
                     CurrentProcessStep = update.Step;
                     CurrentProcessPercent = update.Percent;
                     StateHasChanged();
@@ -309,6 +332,11 @@ public partial class SystemPage
             });
 
             SystemGameProcessingResult result = await GameProcessingService.ProcessPlatformAsync(Platform.Id, progress);
+            if (PlatformId != processingPlatformId)
+            {
+                return;
+            }
+
             LastProcessSucceeded = result.IsSuccess;
             ProcessResultMessage = result.IsSuccess
                 ? $"{result.Message} IGDB games: {result.IGDBGamesProcessed}. ROMs processed: {result.RomFilesProcessed}. Matched: {result.RomMatches}. Unmatched: {result.RomUnmatched}."
@@ -325,6 +353,11 @@ public partial class SystemPage
         }
         catch (Exception ex)
         {
+            if (PlatformId != processingPlatformId)
+            {
+                return;
+            }
+
             Console.WriteLine($"[SystemPage] ProcessGames failed: {ex}");
             LastProcessSucceeded = false;
             ProcessResultMessage = $"Failed to process games: {ex.Message}";
@@ -333,7 +366,10 @@ public partial class SystemPage
         }
         finally
         {
-            IsProcessingGames = false;
+            if (PlatformId == processingPlatformId)
+            {
+                IsProcessingGames = false;
+            }
         }
     }
 }
