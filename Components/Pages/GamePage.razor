@@ -54,9 +54,40 @@ else
                 {
                     <MudText Typo="Typo.body1"><b>Tracked Systems:</b> @CoveredPlatformCount of @TotalPlatformCount system(s) have ROMs.</MudText>
                 }
+
+                <MudText Typo="Typo.body1" Class="mt-2"><b>Genres:</b></MudText>
+                @if (GenreNames.Count == 0)
+                {
+                    <MudText Typo="Typo.body2">No genres available.</MudText>
+                }
+                else
+                {
+                    <MudStack Row="true" Spacing="1" Style="flex-wrap: wrap;">
+                        @foreach (string genre in GenreNames)
+                        {
+                            <MudChip T="string" Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small">@genre</MudChip>
+                        }
+                    </MudStack>
+                }
             </MudItem>
         </MudGrid>
     </MudPaper>
+
+    @if (!string.IsNullOrWhiteSpace(Game.Summary))
+    {
+        <MudText Typo="Typo.h6" GutterBottom="true">Summary</MudText>
+        <MudPaper Class="pa-4 mb-3">
+            <MudText Typo="Typo.body2">@Game.Summary</MudText>
+        </MudPaper>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(Game.Storyline))
+    {
+        <MudText Typo="Typo.h6" GutterBottom="true">Storyline</MudText>
+        <MudPaper Class="pa-4 mb-3">
+            <MudText Typo="Typo.body2">@Game.Storyline</MudText>
+        </MudPaper>
+    }
 
     <MudText Typo="Typo.h6" GutterBottom="true">Tracked Systems</MudText>
     <MudPaper Class="pa-4 mb-3">
@@ -103,33 +134,6 @@ else
                     </MudTd>
                 </RowTemplate>
             </MudTable>
-        }
-    </MudPaper>
-
-    <MudText Typo="Typo.h6" GutterBottom="true">Summary</MudText>
-    <MudPaper Class="pa-4 mb-3">
-        <MudText Typo="Typo.body2">@(string.IsNullOrWhiteSpace(Game.Summary) ? "No summary available." : Game.Summary)</MudText>
-    </MudPaper>
-
-    <MudText Typo="Typo.h6" GutterBottom="true">Storyline</MudText>
-    <MudPaper Class="pa-4 mb-3">
-        <MudText Typo="Typo.body2">@(string.IsNullOrWhiteSpace(Game.Storyline) ? "No storyline available." : Game.Storyline)</MudText>
-    </MudPaper>
-
-    <MudText Typo="Typo.h6" GutterBottom="true">Genres</MudText>
-    <MudPaper Class="pa-4 mb-3">
-        @if (GenreNames.Count == 0)
-        {
-            <MudText Typo="Typo.body2">No genres available.</MudText>
-        }
-        else
-        {
-            <MudStack Row="true" Spacing="1" Style="flex-wrap: wrap;">
-                @foreach (string genre in GenreNames)
-                {
-                    <MudChip T="string" Color="Color.Primary" Variant="Variant.Outlined">@genre</MudChip>
-                }
-            </MudStack>
         }
     </MudPaper>
 
