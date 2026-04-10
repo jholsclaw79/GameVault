@@ -89,7 +89,17 @@ else
                     <MudText Typo="Typo.body1"><b>Generation:</b> @(Platform.Generation?.ToString() ?? "N/A")</MudText>
                     <MudText Typo="Typo.body1"><b>Type:</b> @(Platform.PlatformType?.Name ?? "N/A")</MudText>
                     <MudText Typo="Typo.body1"><b>Family:</b> @(Platform.PlatformFamily?.Name ?? "N/A")</MudText>
-                    <MudText Typo="Typo.body1"><b>URL:</b> @(Platform.Url ?? "N/A")</MudText>
+                    <MudText Typo="Typo.body1">
+                        <b>URL: </b>
+                        @if (string.IsNullOrWhiteSpace(Platform.Url))
+                        {
+                            <span>N/A</span>
+                        }
+                        else
+                        {
+                            <MudLink Href="@Platform.Url" Target="_blank">@Platform.Url</MudLink>
+                        }
+                    </MudText>
                 </MudItem>
             </MudGrid>
         </MudPaper>
@@ -124,7 +134,17 @@ else
                     <MudText Typo="Typo.body1"><b>Memory:</b> @(version.Memory ?? "N/A")</MudText>
                     <MudText Typo="Typo.body1"><b>Storage:</b> @(version.Storage ?? "N/A")</MudText>
                     <MudText Typo="Typo.body1"><b>OS:</b> @(version.OS ?? "N/A")</MudText>
-                    <MudText Typo="Typo.body1"><b>URL:</b> @(version.Url ?? "N/A")</MudText>
+                    <MudText Typo="Typo.body1">
+                        <b>URL: </b>
+                        @if (string.IsNullOrWhiteSpace(Platform.Url))
+                        {
+                            <span>N/A</span>
+                        }
+                        else
+                        {
+                            <MudLink Href="@version.Url" Target="_blank">@version.Url</MudLink>
+                        }
+                    </MudText>
                     <MudText Typo="Typo.body2" Class="mt-2">@(version.Summary ?? "No summary available.")</MudText>
                 </MudItem>
             </MudGrid>
@@ -178,7 +198,17 @@ else
                         <MudText Typo="Typo.body1"><b>Memory:</b> @(CurrentVersion.Memory ?? "N/A")</MudText>
                         <MudText Typo="Typo.body1"><b>Storage:</b> @(CurrentVersion.Storage ?? "N/A")</MudText>
                         <MudText Typo="Typo.body1"><b>OS:</b> @(CurrentVersion.OS ?? "N/A")</MudText>
-                        <MudText Typo="Typo.body1"><b>URL:</b> @(CurrentVersion.Url ?? "N/A")</MudText>
+                        <MudText Typo="Typo.body1">
+                            <b>URL: </b>
+                            @if (string.IsNullOrWhiteSpace(CurrentVersion.Url))
+                            {
+                                <span>N/A</span>
+                            }
+                            else
+                            {
+                                <MudLink Href="@CurrentVersion.Url" Target="_blank">@CurrentVersion.Url</MudLink>
+                            }
+                        </MudText>
                         <MudText Typo="Typo.body2" Class="mt-2">@(CurrentVersion.Summary ?? "No summary available.")</MudText>
                     </MudItem>
                 </MudGrid>

@@ -1,0 +1,236 @@
+@page "/games/{GameId:long}"
+@using GameVault.Data
+@using GameVault.Data.Models
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<AppDbContext> DbContextFactory
+
+<PageTitle>@(Game?.Name ?? "Game")</PageTitle>
+
+@if (IsLoading)
+{
+    <MudProgressCircular Color="Color.Info" Indeterminate="true" Size="Size.Large" />
+}
+else if (Game == null)
+{
+    <MudAlert Severity="Severity.Warning" Dense="true">
+        Game not found.
+    </MudAlert>
+}
+else
+{
+    <MudText Typo="Typo.h4" GutterBottom="true">@Game.Name</MudText>
+
+    <MudPaper Class="pa-4 mb-3">
+        <MudGrid>
+            <MudItem xs="12" md="3">
+                @if (!string.IsNullOrWhiteSpace(CoverUrl))
+                {
+                    <MudPaper Class="pa-3 d-flex align-center justify-center game-cover-shell" Outlined="true">
+                        <MudImage Src="@CoverUrl" Alt="@Game.Name" Fluid="true" Class="game-cover-image" />
+                    </MudPaper>
+                }
+                else
+                {
+                    <MudAlert Severity="Severity.Info" Dense="true">No cover art available</MudAlert>
+                }
+            </MudItem>
+            <MudItem xs="12" md="9">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2" Style="gap: 0.5rem; flex-wrap: wrap;">
+                    <MudStack Row="true" Spacing="1" Style="flex-wrap: wrap;">
+                        <MudChip T="string" Color="@GetStatusColor()" Variant="Variant.Filled">@GameStatusLabel</MudChip>
+                        @if (Game.IsTracked)
+                        {
+                            <MudChip T="string" Color="Color.Success" Variant="Variant.Outlined">Tracked</MudChip>
+                        }
+                    </MudStack>
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.Edit"
+                               OnClick="OpenEditGameModal">
+                        Edit Game
+                    </MudButton>
+                </MudStack>
+
+                <MudText Typo="Typo.body1"><b>IGDB ID:</b> @GetIgdbLabel()</MudText>
+                <MudText Typo="Typo.body1"><b>Release Date:</b> @GetReleaseDateLabel()</MudText>
+                <MudText Typo="Typo.body1"><b>Rating:</b> @GetRatingLabel()</MudText>
+                <MudText Typo="Typo.body1"><b>Total Rating:</b> @GetTotalRatingLabel()</MudText>
+                <MudText Typo="Typo.body1"><b>Slug:</b> @(Game.Slug ?? "N/A")</MudText>
+                <MudText Typo="Typo.body1">
+                    <b>URL: </b>
+                    @if (string.IsNullOrWhiteSpace(Game.Url))
+                    {
+                        <span>N/A</span>
+                    }
+                    else
+                    {
+                        <MudLink Href="@Game.Url" Target="_blank">@Game.Url</MudLink>
+                    }
+                </MudText>
+                <MudText Typo="Typo.body1"><b>Updated:</b> @Game.UpdatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</MudText>
+
+                <MudText Typo="Typo.body1" Class="mt-2"><b>Genres:</b></MudText>
+                @if (GenreNames.Count == 0)
+                {
+                    <MudText Typo="Typo.body2">No genres available.</MudText>
+                }
+                else
+                {
+                    <MudStack Row="true" Spacing="1" Style="flex-wrap: wrap;">
+                        @foreach (string genre in GenreNames)
+                        {
+                            <MudChip T="string" Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small">@genre</MudChip>
+                        }
+                    </MudStack>
+                }
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    @if (!string.IsNullOrWhiteSpace(Game.Summary))
+    {
+        <MudText Typo="Typo.h6" GutterBottom="true">Summary</MudText>
+        <MudPaper Class="pa-4 mb-3">
+            <MudText Typo="Typo.body2">@Game.Summary</MudText>
+        </MudPaper>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(Game.Storyline))
+    {
+        <MudText Typo="Typo.h6" GutterBottom="true">Storyline</MudText>
+        <MudPaper Class="pa-4 mb-3">
+            <MudText Typo="Typo.body2">@Game.Storyline</MudText>
+        </MudPaper>
+    }
+
+    @if (HasMediaItems)
+    {
+        <MudText Typo="Typo.h6" GutterBottom="true">Media</MudText>
+        <MudPaper Class="pa-4 mb-3">
+            <MudCarousel TData="MediaCarouselItem"
+                         AutoCycle="false"
+                         ShowArrows="true"
+                         ShowBullets="false"
+                         Class="media-carousel"
+                         Style="height: 560px;"
+                         @bind-SelectedIndex="CurrentMediaIndex">
+                @foreach (var media in MediaItems)
+                {
+                    <MudCarouselItem>
+                        <button type="button" class="media-card" @onclick="@(() => OpenMediaModal(media))">
+                            <div class="media-frame">
+                                <img src="@media.PreviewUrl" alt="@media.Title" class="media-preview" />
+                                @if (media.IsVideo)
+                                {
+                                    <div class="media-video-badge">Video</div>
+                                    <div class="media-video-play">▶</div>
+                                }
+                            </div>
+                            <MudText Typo="Typo.caption" Class="mt-2">@media.Type: @media.Title</MudText>
+                        </button>
+                    </MudCarouselItem>
+                }
+            </MudCarousel>
+            @if (MediaItems.Count > 1)
+            {
+                <div class="media-dots">
+                    @for (int i = 0; i < MediaItems.Count; i++)
+                    {
+                        int index = i;
+                        <button type="button"
+                                class="media-dot @(index == CurrentMediaIndex ? "active" : string.Empty)"
+                                @onclick="@(() => CurrentMediaIndex = index)"
+                                aria-label="@($"Go to media item {index + 1}")">
+                        </button>
+                    }
+                </div>
+            }
+        </MudPaper>
+    }
+
+    <MudText Typo="Typo.h6" GutterBottom="true">Tracked Systems</MudText>
+    <MudPaper Class="pa-4 mb-3">
+        @if (TrackedSystems.Count == 0)
+        {
+            <MudText Typo="Typo.body2">No tracked systems found for this game.</MudText>
+        }
+        else
+        {
+            <MudTable Items="TrackedSystems" Dense="true" Hover="true" Breakpoint="Breakpoint.Sm">
+                <HeaderContent>
+                    <MudTh>System</MudTh>
+                    <MudTh>Status</MudTh>
+                    <MudTh>ROM Files</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="System">@context.PlatformName</MudTd>
+                    <MudTd DataLabel="Status">
+                        @if (context.HasRom || context.IsPhysicallyOwned)
+                        {
+                            <MudChip T="string" Color="Color.Success" Variant="Variant.Filled" Size="Size.Small">In Library</MudChip>
+                        }
+                        else
+                        {
+                            <MudChip T="string" Color="Color.Warning" Variant="Variant.Outlined" Size="Size.Small">Missing ROM</MudChip>
+                        }
+
+                        @if (context.IsCompleted)
+                        {
+                            <MudChip T="string" Color="Color.Success" Variant="Variant.Outlined" Size="Size.Small" Class="ms-1">Completed</MudChip>
+                        }
+
+                        @if (context.IsPhysicallyOwned)
+                        {
+                            <MudChip T="string" Color="Color.Info" Variant="Variant.Outlined" Size="Size.Small" Class="ms-1">Physically Owned</MudChip>
+                        }
+                    </MudTd>
+                    <MudTd DataLabel="ROM Files">
+                        @if (context.HasRom)
+                        {
+                            <MudStack Spacing="0">
+                                @foreach (GVGameRom rom in context.RomFiles)
+                                {
+                                    <MudText Typo="Typo.caption">
+                                        @rom.FileName (@FormatFileSize(rom.FileSizeBytes))
+                                    </MudText>
+                                }
+                            </MudStack>
+                        }
+                        else if (context.IsPhysicallyOwned)
+                        {
+                            <MudText Typo="Typo.caption">Physical Media</MudText>
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.caption">None</MudText>
+                        }
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </MudPaper>
+
+    @if (ExpandedMediaItem != null)
+    {
+        <div class="media-modal-backdrop" @onclick="CloseMediaModal">
+            <div class="media-modal-content" @onclick:stopPropagation="true">
+                <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Inherit" Class="media-modal-close" OnClick="CloseMediaModal" />
+
+                @if (ExpandedMediaItem.IsVideo)
+                {
+                    <iframe src="@ExpandedMediaItem.FullUrl"
+                            title="@ExpandedMediaItem.Title"
+                            class="media-modal-video"
+                            allow="autoplay; encrypted-media; picture-in-picture"
+                            allowfullscreen>
+                    </iframe>
+                }
+                else
+                {
+                    <img src="@ExpandedMediaItem.FullUrl" alt="@ExpandedMediaItem.Title" class="media-modal-image" />
+                }
+            </div>
+        </div>
+    }
+
+}

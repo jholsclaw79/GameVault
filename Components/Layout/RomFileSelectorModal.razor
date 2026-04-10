@@ -1,0 +1,46 @@
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="2">
+            <MudText Typo="Typo.h5">Choose ROM File</MudText>
+
+            <MudTextField T="string" Label="Current Folder" Value="@CurrentFolder" ReadOnly="true" FullWidth="true" />
+            <MudTextField T="string" Label="Selected File" Value="@_selectedFile" ReadOnly="true" FullWidth="true" />
+
+            <MudPaper Outlined="true" Class="pa-2" Style="max-height: 420px; overflow-y: auto;">
+                <MudList T="string" Dense="true">
+                    @if (CanNavigateUp)
+                    {
+                        <MudListItem T="string" OnClick="@(() => NavigateToFolder(ParentFolderPath!))">
+                            ...
+                        </MudListItem>
+                    }
+
+                    @foreach (string path in CurrentDirectories)
+                    {
+                        <MudListItem T="string" OnClick="@(() => NavigateToFolder(path))">
+                            [DIR] @GetDisplayName(path)
+                        </MudListItem>
+                    }
+
+                    @foreach (string path in CurrentFiles)
+                    {
+                        <MudListItem T="string" OnClick="@(() => SelectFileAndClose(path))">
+                            @GetDisplayName(path)
+                        </MudListItem>
+                    }
+                </MudList>
+            </MudPaper>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="Close">
+            Close
+        </MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Warning" OnClick="ClearSelection">
+            Clear
+        </MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveFile">
+            Select File
+        </MudButton>
+    </DialogActions>
+</MudDialog>

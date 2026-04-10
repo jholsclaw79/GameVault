@@ -62,6 +62,8 @@ public class GVGame : IIGDBSyncable
     public ICollection<GVGameExpansion> ExpansionLinks { get; set; } = [];
     public bool IsTracked { get; set; }
     public bool IsLocalOnly { get; set; }
+    public bool IsCompleted { get; set; }
+    public bool IsPhysicallyOwned { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public ICollection<GVGameRom> RomFiles { get; set; } = [];

@@ -174,6 +174,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasDefaultValue(false);
 
         modelBuilder.Entity<GVGame>()
+            .Property(game => game.IsCompleted)
+            .HasDefaultValue(false);
+
+        modelBuilder.Entity<GVGame>()
+            .Property(game => game.IsPhysicallyOwned)
+            .HasDefaultValue(false);
+
+        modelBuilder.Entity<GVGame>()
             .HasIndex(game => game.CoverIGDBId);
 
         modelBuilder.Entity<GVGame>()
@@ -214,6 +222,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
         modelBuilder.Entity<GVGameRom>()
             .HasIndex(rom => rom.GameIGDBId);
+
+        modelBuilder.Entity<GVGameRom>()
+            .Property(rom => rom.IsCompleted)
+            .HasDefaultValue(false);
+
+        modelBuilder.Entity<GVGameRom>()
+            .Property(rom => rom.IsPhysicallyOwned)
+            .HasDefaultValue(false);
 
         modelBuilder.Entity<GVGameRom>()
             .HasOne(rom => rom.Game)
