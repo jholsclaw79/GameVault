@@ -15,6 +15,8 @@ public class SystemGameProcessingService(
     HasheousLookupService hasheousLookupService)
 {
     private const int PageSize = 500;
+    private const int ByIdChunkSize = 50;
+    private const int MaxRateLimitRetries = 5;
 
     public async Task<SystemGameProcessingResult> ProcessPlatformAsync(
         long platformId,
@@ -201,8 +203,8 @@ public class SystemGameProcessingService(
             FileInfo info = new(file);
             (string md5, string sha1) = await ComputeHashesAsync(file, cancellationToken);
             Console.WriteLine($"[SystemGameProcessing] Hashes computed: file={file}, md5={md5}, sha1={sha1}");
-            long? matchedIgdbId = await hasheousLookupService.FindIgdbIdByHashAsync(md5, sha1, cancellationToken);
-            Console.WriteLine($"[SystemGameProcessing] Hasheous lookup result: file={file}, matchedIgdbId={(matchedIgdbId?.ToString() ?? "none")}");
+            long? matchedIgdbId = await hasheousLookupService.FindIgdbIdForRomAsync(info.Name, info.Exists ? info.Length : 0, md5, sha1, cancellationToken);
+            Console.WriteLine($"[SystemGameProcessing] Lookup result: file={file}, matchedIgdbId={(matchedIgdbId?.ToString() ?? "none")}");
 
             items.Add(new RomScanItem
             {
@@ -712,21 +714,39 @@ public class SystemGameProcessingService(
         where T : class
     {
         List<T> results = [];
-        foreach (List<long> chunk in Chunk(ids, 150))
+        foreach (List<long> chunk in Chunk(ids, ByIdChunkSize))
         {
             cancellationToken.ThrowIfCancellationRequested();
             string idSet = string.Join(',', chunk);
             string query = $"{fieldsClause} where id = ({idSet}); limit {PageSize};";
             Console.WriteLine($"[SystemGameProcessing] IGDB by-id query endpoint={endpoint}: {query}");
-            T[]? page;
-            try
+            T[]? page = null;
+            bool completed = false;
+            for (int attempt = 1; attempt <= MaxRateLimitRetries && !completed; attempt++)
             {
-                page = await client.QueryAsync<T>(endpoint, query);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[SystemGameProcessing] IGDB by-id query failed endpoint={endpoint}: {ex.Message}");
-                throw;
+                try
+                {
+                    page = await client.QueryAsync<T>(endpoint, query);
+                    completed = true;
+                }
+                catch (Exception ex) when (IsRateLimited(ex))
+                {
+                    if (attempt == MaxRateLimitRetries)
+                    {
+                        Console.WriteLine($"[SystemGameProcessing] IGDB by-id query hit rate limit endpoint={endpoint} after {MaxRateLimitRetries} attempts. Skipping chunk.");
+                        completed = true;
+                        break;
+                    }
+
+                    TimeSpan delay = GetRateLimitDelay(attempt);
+                    Console.WriteLine($"[SystemGameProcessing] IGDB by-id query rate limited endpoint={endpoint}, attempt={attempt}/{MaxRateLimitRetries}, waiting={delay.TotalSeconds:0}s");
+                    await Task.Delay(delay, cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[SystemGameProcessing] IGDB by-id query failed endpoint={endpoint}: {ex.Message}");
+                    throw;
+                }
             }
 
             if (page is { Length: > 0 })
@@ -736,6 +756,32 @@ public class SystemGameProcessingService(
         }
 
         return results;
+    }
+
+    private static bool IsRateLimited(Exception ex)
+    {
+        if (ex.Message.Contains("429", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        object? statusCode = ex.GetType().GetProperty("StatusCode")?.GetValue(ex);
+        if (statusCode == null)
+        {
+            return false;
+        }
+
+        return statusCode switch
+        {
+            int code => code == 429,
+            _ => string.Equals(statusCode.ToString(), "TooManyRequests", StringComparison.OrdinalIgnoreCase)
+        };
+    }
+
+    private static TimeSpan GetRateLimitDelay(int attempt)
+    {
+        int seconds = Math.Min(30, (int)Math.Pow(2, attempt));
+        return TimeSpan.FromSeconds(seconds);
     }
 
     private async Task UpsertLinksAsync(AppDbContext context, List<Game> games, CancellationToken cancellationToken)
