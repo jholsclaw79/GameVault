@@ -11,7 +11,7 @@ namespace GameVault.Components.Pages;
 
 public partial class GamePage
 {
-    private sealed record TrackedSystemRow(long PlatformIgdbId, string PlatformName, bool HasRom, List<GVGameRom> RomFiles);
+    private sealed record TrackedSystemRow(long PlatformIgdbId, string PlatformName, bool HasRom, bool IsCompleted, bool IsPhysicallyOwned, List<GVGameRom> RomFiles);
     private sealed record MediaCarouselItem(string Type, string Title, string PreviewUrl, string FullUrl, bool IsVideo);
     private static readonly Regex TrailingNumberRegex = new(@"\s+\d+$", RegexOptions.Compiled);
 
@@ -59,10 +59,10 @@ public partial class GamePage
 
             if (TrackedSystems.Count == 0)
             {
-                return Game.IsPhysicallyOwned ? "Matched" : "Missing";
+                return "Missing";
             }
 
-            int inLibraryCount = TrackedSystems.Count(platform => platform.HasRom || Game.IsPhysicallyOwned);
+            int inLibraryCount = TrackedSystems.Count(platform => platform.HasRom || platform.IsPhysicallyOwned);
             if (inLibraryCount == 0)
             {
                 return "Missing";
@@ -196,14 +196,15 @@ public partial class GamePage
         {
             ["GameName"] = Game.Name,
             ["IgdbId"] = Game.IGDBId > 0 ? Game.IGDBId : null,
-            ["RomLocation"] = TrackedSystems.SelectMany(system => system.RomFiles).Select(rom => rom.FilePath).FirstOrDefault(),
-            ["IsCompleted"] = Game.IsCompleted,
-            ["IsPhysicallyOwned"] = Game.IsPhysicallyOwned,
+            ["RomLocation"] = TrackedSystems.FirstOrDefault()?.RomFiles.FirstOrDefault()?.FilePath,
             ["SystemOptions"] = TrackedSystems
                 .Select(system => new GameEditSystemOption
                 {
                     PlatformIgdbId = system.PlatformIgdbId,
-                    PlatformName = system.PlatformName
+                    PlatformName = system.PlatformName,
+                    RomLocation = system.RomFiles.FirstOrDefault()?.FilePath,
+                    IsCompleted = system.IsCompleted,
+                    IsPhysicallyOwned = system.IsPhysicallyOwned
                 })
                 .ToList()
         };
@@ -272,13 +273,11 @@ public partial class GamePage
             targetGame.IsTracked = true;
         }
 
-        targetGame.IsCompleted = edit.IsCompleted;
-        targetGame.IsPhysicallyOwned = edit.IsPhysicallyOwned;
         targetGame.UpdatedAt = DateTime.UtcNow;
 
-        if (!string.IsNullOrWhiteSpace(edit.RomLocation) && edit.PlatformIgdbId.HasValue)
+        if (edit.PlatformIgdbId.HasValue)
         {
-            await UpsertManualRomAsync(context, targetGame, edit.PlatformIgdbId.Value, edit.RomLocation);
+            await UpsertSystemRomAndStateAsync(context, targetGame, edit.PlatformIgdbId.Value, edit.RomLocation, edit.IsCompleted, edit.IsPhysicallyOwned);
         }
 
         if (sourceGame.Id != targetGame.Id && sourceGame.IsLocalOnly)
@@ -324,9 +323,73 @@ public partial class GamePage
         await Task.CompletedTask;
     }
 
-    private static async Task UpsertManualRomAsync(AppDbContext context, GVGame game, long platformIgdbId, string romLocation)
+    private static async Task UpsertSystemRomAndStateAsync(
+        AppDbContext context,
+        GVGame game,
+        long platformIgdbId,
+        string? romLocation,
+        bool isCompleted,
+        bool isPhysicallyOwned)
     {
-        string normalizedPath = romLocation.Trim();
+        string? normalizedPath = string.IsNullOrWhiteSpace(romLocation) ? null : romLocation.Trim();
+        if (!string.IsNullOrWhiteSpace(normalizedPath))
+        {
+            await UpsertRomPathAsync(context, game, platformIgdbId, normalizedPath, isCompleted, isPhysicallyOwned);
+        }
+
+        List<GVGameRom> platformRows = await context.GameRoms
+            .Where(item => item.GameIGDBId == game.IGDBId && item.PlatformIGDBId == platformIgdbId)
+            .ToListAsync();
+        if (platformRows.Count == 0 && (isCompleted || isPhysicallyOwned))
+        {
+            string syntheticPath = BuildSystemStatePath(game.IGDBId, platformIgdbId);
+            GVGameRom? syntheticRow = await context.GameRoms
+                .FirstOrDefaultAsync(item => item.PlatformIGDBId == platformIgdbId && item.FilePath == syntheticPath);
+            if (syntheticRow == null)
+            {
+                syntheticRow = new GVGameRom
+                {
+                    PlatformIGDBId = platformIgdbId,
+                    GameIGDBId = game.IGDBId,
+                    FileName = "manual-system-state",
+                    FilePath = syntheticPath,
+                    Md5 = "manual",
+                    Sha1 = "manual",
+                    FileSizeBytes = 0,
+                    IsCompleted = isCompleted,
+                    IsPhysicallyOwned = isPhysicallyOwned,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                context.GameRoms.Add(syntheticRow);
+            }
+            else
+            {
+                syntheticRow.GameIGDBId = game.IGDBId;
+                syntheticRow.IsCompleted = isCompleted;
+                syntheticRow.IsPhysicallyOwned = isPhysicallyOwned;
+                syntheticRow.UpdatedAt = DateTime.UtcNow;
+            }
+
+            platformRows.Add(syntheticRow);
+        }
+
+        foreach (GVGameRom row in platformRows)
+        {
+            row.IsCompleted = isCompleted;
+            row.IsPhysicallyOwned = isPhysicallyOwned;
+            row.UpdatedAt = DateTime.UtcNow;
+        }
+    }
+
+    private static async Task UpsertRomPathAsync(
+        AppDbContext context,
+        GVGame game,
+        long platformIgdbId,
+        string normalizedPath,
+        bool isCompleted,
+        bool isPhysicallyOwned)
+    {
         string fileName = Path.GetFileName(normalizedPath);
         if (string.IsNullOrWhiteSpace(fileName))
         {
@@ -345,10 +408,7 @@ public partial class GamePage
         }
 
         GVGameRom? rom = await context.GameRoms
-            .FirstOrDefaultAsync(item =>
-                item.PlatformIGDBId == platformIgdbId &&
-                item.FilePath == normalizedPath);
-
+            .FirstOrDefaultAsync(item => item.PlatformIGDBId == platformIgdbId && item.FilePath == normalizedPath);
         if (rom == null)
         {
             context.GameRoms.Add(new GVGameRom
@@ -360,10 +420,11 @@ public partial class GamePage
                 Md5 = md5,
                 Sha1 = sha1,
                 FileSizeBytes = fileSize,
+                IsCompleted = isCompleted,
+                IsPhysicallyOwned = isPhysicallyOwned,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             });
-
             return;
         }
 
@@ -372,7 +433,14 @@ public partial class GamePage
         rom.Md5 = md5;
         rom.Sha1 = sha1;
         rom.FileSizeBytes = fileSize;
+        rom.IsCompleted = isCompleted;
+        rom.IsPhysicallyOwned = isPhysicallyOwned;
         rom.UpdatedAt = DateTime.UtcNow;
+    }
+
+    private static string BuildSystemStatePath(long gameIgdbId, long platformIgdbId)
+    {
+        return $"manual://game/{gameIgdbId}/platform/{platformIgdbId}";
     }
 
     private static async Task<(string Md5, string Sha1)> ComputeFileHashesAsync(string filePath)
@@ -438,7 +506,15 @@ public partial class GamePage
             .Select(group =>
             {
                 string name = trackedNameLookup[group.Key];
-                return new TrackedSystemRow(group.Key, name, true, group.OrderBy(rom => rom.FileName).ToList());
+                List<GVGameRom> allRows = group.OrderBy(rom => rom.FileName).ToList();
+                List<GVGameRom> visibleRomRows = allRows.Where(rom => !IsSyntheticSystemStateRow(rom)).ToList();
+                return new TrackedSystemRow(
+                    group.Key,
+                    name,
+                    visibleRomRows.Count > 0,
+                    allRows.Any(rom => rom.IsCompleted),
+                    allRows.Any(rom => rom.IsPhysicallyOwned),
+                    visibleRomRows);
             })
             .ToList();
     }
@@ -471,12 +547,24 @@ public partial class GamePage
 
         return trackedSupportedPlatformIds
             .OrderBy(id => FormatPlatformName(id, trackedPlatformNameLookup))
-            .Select(id => new TrackedSystemRow(
-                id,
-                FormatPlatformName(id, trackedPlatformNameLookup),
-                romsByPlatform.ContainsKey(id),
-                romsByPlatform.GetValueOrDefault(id, [])))
+            .Select(id =>
+            {
+                List<GVGameRom> allRows = romsByPlatform.GetValueOrDefault(id, []);
+                List<GVGameRom> visibleRomRows = allRows.Where(rom => !IsSyntheticSystemStateRow(rom)).ToList();
+                return new TrackedSystemRow(
+                    id,
+                    FormatPlatformName(id, trackedPlatformNameLookup),
+                    visibleRomRows.Count > 0,
+                    allRows.Any(rom => rom.IsCompleted),
+                    allRows.Any(rom => rom.IsPhysicallyOwned),
+                    visibleRomRows);
+            })
             .ToList();
+    }
+
+    private static bool IsSyntheticSystemStateRow(GVGameRom rom)
+    {
+        return rom.FilePath.StartsWith("manual://game/", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string? NormalizeGameCoverUrl(string? rawUrl)

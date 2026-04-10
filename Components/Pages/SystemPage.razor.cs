@@ -177,10 +177,13 @@ public partial class SystemPage
         List<GVGame> platformIgdbGames = await context.Games
             .Where(game => game.IGDBId > 0 && !game.IsLocalOnly && !string.IsNullOrWhiteSpace(game.PlatformsIdsJson))
             .Include(game => game.Cover)
+            .Include(game => game.RomFiles)
             .ToListAsync();
 
         List<GVGame> physicallyOwnedMatches = platformIgdbGames
-            .Where(game => game.IsPhysicallyOwned && GameHasPlatform(game, platformIgdbId.Value))
+            .Where(game =>
+                game.RomFiles.Any(rom => rom.PlatformIGDBId == platformIgdbId.Value && rom.IsPhysicallyOwned) &&
+                GameHasPlatform(game, platformIgdbId.Value))
             .ToList();
 
         matched = matched

@@ -18,12 +18,6 @@ public partial class EditGameModal : ComponentBase
     public string? RomLocation { get; set; }
 
     [Parameter]
-    public bool IsCompleted { get; set; }
-
-    [Parameter]
-    public bool IsPhysicallyOwned { get; set; }
-
-    [Parameter]
     public List<GameEditSystemOption> SystemOptions { get; set; } = [];
 
     private bool IsSaving { get; set; }
@@ -38,15 +32,44 @@ public partial class EditGameModal : ComponentBase
     {
         IgdbIdInput = IgdbId > 0 ? IgdbId : null;
         RomLocationInput = RomLocation ?? string.Empty;
-        IsCompletedInput = IsCompleted;
-        IsPhysicallyOwnedInput = IsPhysicallyOwned;
-
-        if (SystemOptions.Count == 1)
+        if (SystemOptions.Count > 0)
         {
             SelectedPlatformIgdbId = SystemOptions[0].PlatformIgdbId;
+            ApplySelectedSystemState();
         }
 
         return base.OnInitializedAsync();
+    }
+
+    private Task OnSelectedPlatformChanged(long? platformIgdbId)
+    {
+        SelectedPlatformIgdbId = platformIgdbId;
+        ApplySelectedSystemState();
+        return Task.CompletedTask;
+    }
+
+    private void ApplySelectedSystemState()
+    {
+        if (!SelectedPlatformIgdbId.HasValue)
+        {
+            IsCompletedInput = false;
+            IsPhysicallyOwnedInput = false;
+            RomLocationInput = string.Empty;
+            return;
+        }
+
+        GameEditSystemOption? option = SystemOptions.FirstOrDefault(item => item.PlatformIgdbId == SelectedPlatformIgdbId.Value);
+        if (option == null)
+        {
+            IsCompletedInput = false;
+            IsPhysicallyOwnedInput = false;
+            RomLocationInput = string.Empty;
+            return;
+        }
+
+        IsCompletedInput = option.IsCompleted;
+        IsPhysicallyOwnedInput = option.IsPhysicallyOwned;
+        RomLocationInput = option.RomLocation ?? string.Empty;
     }
 
     private Task Close()
@@ -60,9 +83,9 @@ public partial class EditGameModal : ComponentBase
         IsSaving = true;
         ErrorMessage = null;
 
-        if (!string.IsNullOrWhiteSpace(RomLocationInput) && !SelectedPlatformIgdbId.HasValue)
+        if ((!string.IsNullOrWhiteSpace(RomLocationInput) || IsCompletedInput || IsPhysicallyOwnedInput) && !SelectedPlatformIgdbId.HasValue)
         {
-            ErrorMessage = "Select a system when setting a ROM location.";
+            ErrorMessage = "Select a system before editing ROM location, completed, or physical ownership.";
             IsSaving = false;
             return Task.CompletedTask;
         }
@@ -93,4 +116,7 @@ public class GameEditSystemOption
 {
     public long PlatformIgdbId { get; set; }
     public string PlatformName { get; set; } = string.Empty;
+    public string? RomLocation { get; set; }
+    public bool IsCompleted { get; set; }
+    public bool IsPhysicallyOwned { get; set; }
 }

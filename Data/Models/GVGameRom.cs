@@ -12,6 +12,8 @@ public class GVGameRom
     public required string Md5 { get; set; }
     public required string Sha1 { get; set; }
     public long FileSizeBytes { get; set; }
+    public bool IsCompleted { get; set; }
+    public bool IsPhysicallyOwned { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }

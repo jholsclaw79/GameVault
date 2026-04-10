@@ -14,12 +14,14 @@
                              Label="IGDB ID"
                              @bind-Value="IgdbIdInput"
                              Min="1"
+                             HideSpinButtons="true"
                              FullWidth="true"
                              Clearable="true" />
 
             <MudSelect T="long?"
                        Label="System (for ROM Location)"
-                       @bind-Value="SelectedPlatformIgdbId"
+                       Value="SelectedPlatformIgdbId"
+                       ValueChanged="OnSelectedPlatformChanged"
                        FullWidth="true"
                        Clearable="true">
                 @foreach (GameEditSystemOption option in SystemOptions)
@@ -34,8 +36,8 @@
                           FullWidth="true"
                           Placeholder="/path/to/rom/file.ext" />
 
-            <MudCheckBox T="bool" @bind-Value="IsCompletedInput" Label="Completed" />
-            <MudCheckBox T="bool" @bind-Value="IsPhysicallyOwnedInput" Label="Physically Owned" />
+            <MudCheckBox T="bool" @bind-Value="IsCompletedInput" Label="Completed (Selected System)" Disabled="@(!SelectedPlatformIgdbId.HasValue)" />
+            <MudCheckBox T="bool" @bind-Value="IsPhysicallyOwnedInput" Label="Physically Owned (Selected System)" Disabled="@(!SelectedPlatformIgdbId.HasValue)" />
         </MudStack>
     </DialogContent>
     <DialogActions>

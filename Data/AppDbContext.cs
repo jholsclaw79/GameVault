@@ -224,6 +224,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasIndex(rom => rom.GameIGDBId);
 
         modelBuilder.Entity<GVGameRom>()
+            .Property(rom => rom.IsCompleted)
+            .HasDefaultValue(false);
+
+        modelBuilder.Entity<GVGameRom>()
+            .Property(rom => rom.IsPhysicallyOwned)
+            .HasDefaultValue(false);
+
+        modelBuilder.Entity<GVGameRom>()
             .HasOne(rom => rom.Game)
             .WithMany(game => game.RomFiles)
             .HasPrincipalKey(game => game.IGDBId)
