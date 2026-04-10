@@ -11,7 +11,8 @@ namespace GameVault.Components.Pages;
 
 public partial class GamePage
 {
-    private sealed record TrackedSystemRow(long PlatformIgdbId, string PlatformName, bool HasRom, bool IsCompleted, bool IsPhysicallyOwned, List<GVGameRom> RomFiles);
+    private sealed record TrackedSystemRow(long PlatformIgdbId, string PlatformName, string? RomFolder, bool HasRom, bool IsCompleted, bool IsPhysicallyOwned, List<GVGameRom> RomFiles);
+    private sealed record TrackedPlatformInfo(string Name, string? RomFolder);
     private sealed record MediaCarouselItem(string Type, string Title, string PreviewUrl, string FullUrl, bool IsVideo);
     private static readonly Regex TrailingNumberRegex = new(@"\s+\d+$", RegexOptions.Compiled);
 
@@ -202,6 +203,7 @@ public partial class GamePage
                 {
                     PlatformIgdbId = system.PlatformIgdbId,
                     PlatformName = system.PlatformName,
+                    RomFolder = system.RomFolder,
                     RomLocation = system.RomFiles.FirstOrDefault()?.FilePath,
                     IsCompleted = system.IsCompleted,
                     IsPhysicallyOwned = system.IsPhysicallyOwned
@@ -332,7 +334,20 @@ public partial class GamePage
         bool isPhysicallyOwned)
     {
         string? normalizedPath = string.IsNullOrWhiteSpace(romLocation) ? null : romLocation.Trim();
-        if (!string.IsNullOrWhiteSpace(normalizedPath))
+        if (string.IsNullOrWhiteSpace(normalizedPath))
+        {
+            List<GVGameRom> romRowsToRemove = await context.GameRoms
+                .Where(item =>
+                    item.GameIGDBId == game.IGDBId &&
+                    item.PlatformIGDBId == platformIgdbId &&
+                    !item.FilePath.StartsWith("manual://game/"))
+                .ToListAsync();
+            if (romRowsToRemove.Count > 0)
+            {
+                context.GameRoms.RemoveRange(romRowsToRemove);
+            }
+        }
+        else
         {
             await UpsertRomPathAsync(context, game, platformIgdbId, normalizedPath, isCompleted, isPhysicallyOwned);
         }
@@ -443,6 +458,12 @@ public partial class GamePage
         return $"manual://game/{gameIgdbId}/platform/{platformIgdbId}";
     }
 
+    private static bool IsSyntheticSystemStatePath(string? filePath)
+    {
+        return !string.IsNullOrWhiteSpace(filePath) &&
+               filePath.StartsWith("manual://game/", StringComparison.OrdinalIgnoreCase);
+    }
+
     private static async Task<(string Md5, string Sha1)> ComputeFileHashesAsync(string filePath)
     {
         await using FileStream stream = File.OpenRead(filePath);
@@ -492,25 +513,26 @@ public partial class GamePage
         return $"IGDB {platform.IGDBId}";
     }
 
-    private static string FormatPlatformName(long igdbId, IReadOnlyDictionary<long, string> nameLookup)
+    private static string FormatPlatformName(long igdbId, IReadOnlyDictionary<long, TrackedPlatformInfo> nameLookup)
     {
-        return nameLookup.TryGetValue(igdbId, out string? name) ? name : $"IGDB {igdbId}";
+        return nameLookup.TryGetValue(igdbId, out TrackedPlatformInfo? info) ? info.Name : $"IGDB {igdbId}";
     }
 
-    private static List<TrackedSystemRow> BuildLocalOnlyTrackedCoverage(IEnumerable<GVGameRom> romFiles, IReadOnlyDictionary<long, string> trackedNameLookup)
+    private static List<TrackedSystemRow> BuildLocalOnlyTrackedCoverage(IEnumerable<GVGameRom> romFiles, IReadOnlyDictionary<long, TrackedPlatformInfo> trackedNameLookup)
     {
         return romFiles
             .Where(rom => trackedNameLookup.ContainsKey(rom.PlatformIGDBId))
             .GroupBy(rom => rom.PlatformIGDBId)
-            .OrderBy(group => trackedNameLookup[group.Key])
+            .OrderBy(group => trackedNameLookup[group.Key].Name)
             .Select(group =>
             {
-                string name = trackedNameLookup[group.Key];
+                TrackedPlatformInfo info = trackedNameLookup[group.Key];
                 List<GVGameRom> allRows = group.OrderBy(rom => rom.FileName).ToList();
                 List<GVGameRom> visibleRomRows = allRows.Where(rom => !IsSyntheticSystemStateRow(rom)).ToList();
                 return new TrackedSystemRow(
                     group.Key,
-                    name,
+                    info.Name,
+                    info.RomFolder,
                     visibleRomRows.Count > 0,
                     allRows.Any(rom => rom.IsCompleted),
                     allRows.Any(rom => rom.IsPhysicallyOwned),
@@ -529,9 +551,11 @@ public partial class GamePage
         List<long> supportedPlatformIds = DeserializeIds(game.PlatformsIdsJson)
             .Distinct()
             .ToList();
-        Dictionary<long, string> trackedPlatformNameLookup = await context.Platforms
+        Dictionary<long, TrackedPlatformInfo> trackedPlatformNameLookup = await context.Platforms
             .Where(platform => platform.IsTracked)
-            .ToDictionaryAsync(platform => platform.IGDBId, GetPlatformDisplayName);
+            .ToDictionaryAsync(
+                platform => platform.IGDBId,
+                platform => new TrackedPlatformInfo(GetPlatformDisplayName(platform), platform.RomFolder));
         Dictionary<long, List<GVGameRom>> romsByPlatform = game.RomFiles
             .GroupBy(rom => rom.PlatformIGDBId)
             .ToDictionary(group => group.Key, group => group.OrderBy(rom => rom.FileName).ToList());
@@ -554,6 +578,7 @@ public partial class GamePage
                 return new TrackedSystemRow(
                     id,
                     FormatPlatformName(id, trackedPlatformNameLookup),
+                    trackedPlatformNameLookup.GetValueOrDefault(id)?.RomFolder,
                     visibleRomRows.Count > 0,
                     allRows.Any(rom => rom.IsCompleted),
                     allRows.Any(rom => rom.IsPhysicallyOwned),
@@ -564,7 +589,7 @@ public partial class GamePage
 
     private static bool IsSyntheticSystemStateRow(GVGameRom rom)
     {
-        return rom.FilePath.StartsWith("manual://game/", StringComparison.OrdinalIgnoreCase);
+        return IsSyntheticSystemStatePath(rom.FilePath);
     }
 
     private static string? NormalizeGameCoverUrl(string? rawUrl)

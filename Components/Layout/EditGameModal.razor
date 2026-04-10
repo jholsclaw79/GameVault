@@ -30,11 +30,26 @@
                 }
             </MudSelect>
 
-            <MudTextField T="string"
-                          Label="ROM Location"
-                          @bind-Value="RomLocationInput"
-                          FullWidth="true"
-                          Placeholder="/path/to/rom/file.ext" />
+            <MudStack Row="true" AlignItems="AlignItems.End" Spacing="1">
+                <MudTextField T="string"
+                              Label="ROM Location"
+                              Value="@RomLocationInput"
+                              ReadOnly="true"
+                              FullWidth="true"
+                              Placeholder="Select a ROM file" />
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           OnClick="OpenRomFileSelector"
+                           Disabled="@(!SelectedPlatformIgdbId.HasValue)">
+                    Browse
+                </MudButton>
+                <MudButton Variant="Variant.Text"
+                           Color="Color.Secondary"
+                           OnClick="@(() => RomLocationInput = string.Empty)"
+                           Disabled="@(!SelectedPlatformIgdbId.HasValue)">
+                    Clear
+                </MudButton>
+            </MudStack>
 
             <MudCheckBox T="bool" @bind-Value="IsCompletedInput" Label="Completed (Selected System)" Disabled="@(!SelectedPlatformIgdbId.HasValue)" />
             <MudCheckBox T="bool" @bind-Value="IsPhysicallyOwnedInput" Label="Physically Owned (Selected System)" Disabled="@(!SelectedPlatformIgdbId.HasValue)" />

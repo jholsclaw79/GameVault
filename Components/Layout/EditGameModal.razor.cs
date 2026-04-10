@@ -20,6 +20,9 @@ public partial class EditGameModal : ComponentBase
     [Parameter]
     public List<GameEditSystemOption> SystemOptions { get; set; } = [];
 
+    [Inject]
+    private IDialogService DialogService { get; set; } = default!;
+
     private bool IsSaving { get; set; }
     private string? ErrorMessage { get; set; }
     private long? IgdbIdInput { get; set; }
@@ -43,6 +46,7 @@ public partial class EditGameModal : ComponentBase
 
     private Task OnSelectedPlatformChanged(long? platformIgdbId)
     {
+        PersistSelectedSystemState();
         SelectedPlatformIgdbId = platformIgdbId;
         ApplySelectedSystemState();
         return Task.CompletedTask;
@@ -72,6 +76,59 @@ public partial class EditGameModal : ComponentBase
         RomLocationInput = option.RomLocation ?? string.Empty;
     }
 
+    private void PersistSelectedSystemState()
+    {
+        if (!SelectedPlatformIgdbId.HasValue)
+        {
+            return;
+        }
+
+        GameEditSystemOption? option = SystemOptions.FirstOrDefault(item => item.PlatformIgdbId == SelectedPlatformIgdbId.Value);
+        if (option == null)
+        {
+            return;
+        }
+
+        option.RomLocation = string.IsNullOrWhiteSpace(RomLocationInput) ? null : RomLocationInput.Trim();
+        option.IsCompleted = IsCompletedInput;
+        option.IsPhysicallyOwned = IsPhysicallyOwnedInput;
+    }
+
+    private async Task OpenRomFileSelector()
+    {
+        if (!SelectedPlatformIgdbId.HasValue)
+        {
+            return;
+        }
+
+        GameEditSystemOption? selectedOption = SystemOptions.FirstOrDefault(item => item.PlatformIgdbId == SelectedPlatformIgdbId.Value);
+        string initialPath = !string.IsNullOrWhiteSpace(RomLocationInput)
+            ? RomLocationInput
+            : (selectedOption?.RomFolder ?? string.Empty);
+
+        DialogParameters parameters = new()
+        {
+            ["Value"] = initialPath
+        };
+
+        DialogOptions options = new()
+        {
+            CloseButton = false,
+            MaxWidth = MaxWidth.Large,
+            FullWidth = true
+        };
+
+        IDialogReference dialog = await DialogService.ShowAsync<RomFileSelectorModal>(string.Empty, parameters, options);
+        DialogResult? result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not string selectedFile)
+        {
+            return;
+        }
+
+        RomLocationInput = selectedFile;
+        PersistSelectedSystemState();
+    }
+
     private Task Close()
     {
         MudDialog.Close();
@@ -82,6 +139,7 @@ public partial class EditGameModal : ComponentBase
     {
         IsSaving = true;
         ErrorMessage = null;
+        PersistSelectedSystemState();
 
         if ((!string.IsNullOrWhiteSpace(RomLocationInput) || IsCompletedInput || IsPhysicallyOwnedInput) && !SelectedPlatformIgdbId.HasValue)
         {
@@ -116,6 +174,7 @@ public class GameEditSystemOption
 {
     public long PlatformIgdbId { get; set; }
     public string PlatformName { get; set; } = string.Empty;
+    public string? RomFolder { get; set; }
     public string? RomLocation { get; set; }
     public bool IsCompleted { get; set; }
     public bool IsPhysicallyOwned { get; set; }
