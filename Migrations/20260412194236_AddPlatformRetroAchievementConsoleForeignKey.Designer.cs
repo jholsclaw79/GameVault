@@ -4,6 +4,7 @@ using GameVault.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GameVault.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260412194236_AddPlatformRetroAchievementConsoleForeignKey")]
+    partial class AddPlatformRetroAchievementConsoleForeignKey
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -939,92 +942,6 @@ namespace GameVault.Migrations
                     b.ToTable("RetroAchievementConsoles");
                 });
 
-            modelBuilder.Entity("GameVault.Data.Models.GVRetroAchievementGame", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<int>("AchievementsCount")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ConsoleName")
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTime?>("DateModified")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<long?>("ForumTopicId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("ImageIcon")
-                        .HasColumnType("longtext");
-
-                    b.Property<int>("LeaderboardsCount")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Points")
-                        .HasColumnType("int");
-
-                    b.Property<long>("RetroAchievementConsoleId")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("RetroAchievementsGameId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RetroAchievementConsoleId");
-
-                    b.HasIndex("RetroAchievementsGameId")
-                        .IsUnique();
-
-                    b.ToTable("RetroAchievementGames");
-                });
-
-            modelBuilder.Entity("GameVault.Data.Models.GVRetroAchievementGameHash", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("Hash")
-                        .IsRequired()
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<long>("RetroAchievementGameId")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Hash");
-
-                    b.HasIndex("RetroAchievementGameId", "Hash")
-                        .IsUnique();
-
-                    b.ToTable("RetroAchievementGameHashes");
-                });
-
             modelBuilder.Entity("GameVault.Data.Models.GVGame", b =>
                 {
                     b.HasOne("GameVault.Data.Models.GVGameCover", "Cover")
@@ -1260,28 +1177,6 @@ namespace GameVault.Migrations
                     b.Navigation("PlatformVersion");
                 });
 
-            modelBuilder.Entity("GameVault.Data.Models.GVRetroAchievementGame", b =>
-                {
-                    b.HasOne("GameVault.Data.Models.GVRetroAchievementConsole", "RetroAchievementConsole")
-                        .WithMany("Games")
-                        .HasForeignKey("RetroAchievementConsoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("RetroAchievementConsole");
-                });
-
-            modelBuilder.Entity("GameVault.Data.Models.GVRetroAchievementGameHash", b =>
-                {
-                    b.HasOne("GameVault.Data.Models.GVRetroAchievementGame", "RetroAchievementGame")
-                        .WithMany("Hashes")
-                        .HasForeignKey("RetroAchievementGameId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("RetroAchievementGame");
-                });
-
             modelBuilder.Entity("GameVault.Data.Models.GVGame", b =>
                 {
                     b.Navigation("DlcLinks");
@@ -1309,16 +1204,6 @@ namespace GameVault.Migrations
                     b.Navigation("PlatformLinks");
 
                     b.Navigation("ReleaseDates");
-                });
-
-            modelBuilder.Entity("GameVault.Data.Models.GVRetroAchievementConsole", b =>
-                {
-                    b.Navigation("Games");
-                });
-
-            modelBuilder.Entity("GameVault.Data.Models.GVRetroAchievementGame", b =>
-                {
-                    b.Navigation("Hashes");
                 });
 #pragma warning restore 612, 618
         }

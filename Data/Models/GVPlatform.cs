@@ -14,9 +14,11 @@ public class GVPlatform : IIGDBSyncable
     public long? PlatformFamilyIGDBId { get; set; }
     public long? PlatformLogoIGDBId { get; set; }
     public long? PlatformTypeIGDBId { get; set; }
+    public long? RetroAchievementConsoleId { get; set; }
     public GVPlatformFamily? PlatformFamily { get; set; }
     public GVPlatformLogo? PlatformLogo { get; set; }
     public GVPlatformType? PlatformType { get; set; }
+    public GVRetroAchievementConsole? RetroAchievementConsole { get; set; }
     public string? Slug { get; set; }
     public string? Summary { get; set; }
     public string? Url { get; set; }

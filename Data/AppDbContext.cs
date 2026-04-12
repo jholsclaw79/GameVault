@@ -25,6 +25,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<GVGameExpandedGame> GameExpandedGames { get; set; }
     public DbSet<GVGameExpansion> GameExpansions { get; set; }
     public DbSet<GVGameRom> GameRoms { get; set; }
+    public DbSet<GVRetroAchievementConsole> RetroAchievementConsoles { get; set; }
+    public DbSet<GVRetroAchievementGame> RetroAchievementGames { get; set; }
+    public DbSet<GVRetroAchievementGameHash> RetroAchievementGameHashes { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -77,6 +80,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasIndex(p => p.PlatformTypeIGDBId);
 
         modelBuilder.Entity<GVPlatform>()
+            .HasIndex(p => p.RetroAchievementConsoleId);
+
+        modelBuilder.Entity<GVPlatform>()
             .HasOne(p => p.PlatformFamily)
             .WithMany()
             .HasPrincipalKey(f => f.IGDBId)
@@ -95,6 +101,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .WithMany()
             .HasPrincipalKey(t => t.IGDBId)
             .HasForeignKey(p => p.PlatformTypeIGDBId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<GVPlatform>()
+            .HasOne(p => p.RetroAchievementConsole)
+            .WithMany()
+            .HasForeignKey(p => p.RetroAchievementConsoleId)
             .OnDelete(DeleteBehavior.SetNull);
 
         // Configure PlatformVersion
@@ -401,6 +413,48 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .WithMany()
             .HasPrincipalKey(game => game.IGDBId)
             .HasForeignKey(link => link.ExpansionIGDBId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Configure RetroAchievements Console
+        modelBuilder.Entity<GVRetroAchievementConsole>()
+            .HasKey(console => console.Id);
+
+        modelBuilder.Entity<GVRetroAchievementConsole>()
+            .HasIndex(console => console.RetroAchievementsId)
+            .IsUnique();
+
+        // Configure RetroAchievements Game
+        modelBuilder.Entity<GVRetroAchievementGame>()
+            .HasKey(game => game.Id);
+
+        modelBuilder.Entity<GVRetroAchievementGame>()
+            .HasIndex(game => game.RetroAchievementsGameId)
+            .IsUnique();
+
+        modelBuilder.Entity<GVRetroAchievementGame>()
+            .HasIndex(game => game.RetroAchievementConsoleId);
+
+        modelBuilder.Entity<GVRetroAchievementGame>()
+            .HasOne(game => game.RetroAchievementConsole)
+            .WithMany(console => console.Games)
+            .HasForeignKey(game => game.RetroAchievementConsoleId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Configure RetroAchievements Game Hash
+        modelBuilder.Entity<GVRetroAchievementGameHash>()
+            .HasKey(hash => hash.Id);
+
+        modelBuilder.Entity<GVRetroAchievementGameHash>()
+            .HasIndex(hash => new { hash.RetroAchievementGameId, hash.Hash })
+            .IsUnique();
+
+        modelBuilder.Entity<GVRetroAchievementGameHash>()
+            .HasIndex(hash => hash.Hash);
+
+        modelBuilder.Entity<GVRetroAchievementGameHash>()
+            .HasOne(hash => hash.RetroAchievementGame)
+            .WithMany(game => game.Hashes)
+            .HasForeignKey(hash => hash.RetroAchievementGameId)
             .OnDelete(DeleteBehavior.Cascade);
     }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

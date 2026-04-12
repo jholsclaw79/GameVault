@@ -58,6 +58,7 @@ public class IGDBSyncService(IDbContextFactory<AppDbContext> dbContextFactory, I
                         PreserveLocalProperty(existingModel, updatedModel, "IsTracked", typeof(bool));
                         PreserveLocalProperty(existingModel, updatedModel, "RomFolder", typeof(string));
                         PreserveLocalProperty(existingModel, updatedModel, "RomTypes", typeof(string));
+                        PreserveLocalProperty(existingModel, updatedModel, "RetroAchievementConsoleId", typeof(long?));
                         context.Entry(existingModel).CurrentValues.SetValues(updatedModel);
                         context.Update(existingModel);
                     }

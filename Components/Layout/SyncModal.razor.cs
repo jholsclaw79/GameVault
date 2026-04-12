@@ -36,7 +36,8 @@ public partial class SyncModal : ComponentBase
             new SyncItem { Name = "Platform Logos" },
             new SyncItem { Name = "Platform Versions" },
             new SyncItem { Name = "Platform Version Release Dates" },
-            new SyncItem { Name = "Platforms" }
+            new SyncItem { Name = "Platforms" },
+            new SyncItem { Name = "RetroAchievements Consoles" }
         ];
     }
 
@@ -134,6 +135,21 @@ public partial class SyncModal : ComponentBase
             else
             {
                 await UpdateSyncStatus(5, SyncStatus.Failed);
+                failedCount++;
+            }
+            
+            // Sync RetroAchievements Consoles
+            await UpdateSyncStatus(6, SyncStatus.InProgress);
+            bool retroAchievementsConsolesSuccess = await RetroAchievementsSyncService.SyncConsolesAsync();
+
+            if (retroAchievementsConsolesSuccess)
+            {
+                await UpdateSyncStatus(6, SyncStatus.Completed);
+                completedCount++;
+            }
+            else
+            {
+                await UpdateSyncStatus(6, SyncStatus.Failed);
                 failedCount++;
             }
 

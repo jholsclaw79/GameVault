@@ -28,6 +28,13 @@ else
                        Disabled="@IsProcessingGames">
                 Process Games
             </MudButton>
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Info"
+                       StartIcon="@Icons.Material.Filled.Sync"
+                       OnClick="SyncRetroAchievementsGamesForSystem"
+                       Disabled="@(IsSyncingRetroAchievementsGames || Platform.RetroAchievementConsoleId == null)">
+                Sync RA Games
+            </MudButton>
             <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" OnClick="OpenEditSystemModal">
                 Edit System
             </MudButton>
@@ -65,6 +72,9 @@ else
     </MudText>
     <MudText Typo="Typo.body2" Class="mb-3">
         <b>Rom Types:</b> @(string.IsNullOrWhiteSpace(Platform.RomTypes) ? "Not set" : Platform.RomTypes)
+    </MudText>
+    <MudText Typo="Typo.body2" Class="mb-3">
+        <b>RetroAchievements Console:</b> @(Platform.RetroAchievementConsole?.Name ?? "Not set")
     </MudText>
 
     <MudText Typo="Typo.h5" GutterBottom="true">Versions</MudText>

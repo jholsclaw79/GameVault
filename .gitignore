@@ -3,3 +3,11 @@ obj/
 /packages/
 riderModule.iml
 /_ReSharper.Caches/
+/.codex
+/.idea/.idea.GameVault/.idea/.gitignore
+/.idea/.idea.GameVault/.idea/dataSources.xml
+/.idea/.idea.GameVault/.idea/encodings.xml
+/GameVault.sln.DotSettings
+/GameVault.sln.DotSettings.user
+/.idea/.idea.GameVault/.idea/indexLayout.xml
+/.idea/.idea.GameVault/.idea/vcs.xml

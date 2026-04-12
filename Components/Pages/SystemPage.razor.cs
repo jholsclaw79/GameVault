@@ -1,6 +1,7 @@
 using GameVault.Data;
 using GameVault.Data.Models;
 using GameVault.Components.Layout;
+using GameVault.Data.RetroAchievements;
 using Microsoft.AspNetCore.Components;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
@@ -18,6 +19,9 @@ public partial class SystemPage
 
     [Inject]
     private ISnackbar Snackbar { get; set; } = default!;
+    
+    [Inject]
+    private RetroAchievementsSyncService RetroAchievementsSyncService { get; set; } = default!;
 
     [Parameter]
     public long PlatformId { get; set; }
@@ -30,6 +34,7 @@ public partial class SystemPage
     private string? CurrentProcessStep { get; set; }
     private int? CurrentProcessPercent { get; set; }
     private bool LastProcessSucceeded { get; set; }
+    private bool IsSyncingRetroAchievementsGames { get; set; }
     private long? LastLoadedPlatformId { get; set; }
     private int CurrentVersionIndex { get; set; }
     private List<GVGame> MatchedGames { get; set; } = [];
@@ -61,6 +66,7 @@ public partial class SystemPage
             .Include(p => p.PlatformLogo)
             .Include(p => p.PlatformType)
             .Include(p => p.PlatformFamily)
+            .Include(p => p.RetroAchievementConsole)
             .FirstOrDefaultAsync(p => p.Id == PlatformId && p.IsTracked);
 
         PlatformVersions = await LoadPlatformVersionsAsync(context, Platform?.IGDBId, Platform?.VersionsIdsJson);
@@ -290,7 +296,8 @@ public partial class SystemPage
             ["PlatformId"] = Platform.Id,
             ["PlatformName"] = Platform.Name,
             ["RomFolder"] = Platform.RomFolder,
-            ["RomTypes"] = Platform.RomTypes
+            ["RomTypes"] = Platform.RomTypes,
+            ["RetroAchievementConsoleId"] = Platform.RetroAchievementConsoleId
         };
 
         DialogOptions options = new()
@@ -309,6 +316,15 @@ public partial class SystemPage
         
         Platform.RomFolder = editResult.RomFolder;
         Platform.RomTypes = editResult.RomTypes;
+        Platform.RetroAchievementConsoleId = editResult.RetroAchievementConsoleId;
+        Platform.RetroAchievementConsole = editResult.RetroAchievementConsoleId.HasValue
+            ? new GVRetroAchievementConsole
+            {
+                Id = editResult.RetroAchievementConsoleId.Value,
+                Name = editResult.RetroAchievementConsoleName ?? "Unknown",
+                RetroAchievementsId = 0
+            }
+            : null;
         StateHasChanged();
     }
 
@@ -384,6 +400,40 @@ public partial class SystemPage
             {
                 IsProcessingGames = false;
             }
+        }
+    }
+
+    private async Task SyncRetroAchievementsGamesForSystem()
+    {
+        if (Platform?.RetroAchievementConsoleId is not long retroAchievementConsoleId || IsSyncingRetroAchievementsGames)
+        {
+            return;
+        }
+
+        try
+        {
+            IsSyncingRetroAchievementsGames = true;
+            StateHasChanged();
+
+            bool success = await RetroAchievementsSyncService.SyncGamesForConsoleAsync(retroAchievementConsoleId);
+            if (success)
+            {
+                Snackbar.Add($"RetroAchievements games synced for {Platform.Name}.", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("No RetroAchievements games were synced for this system.", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[SystemPage] SyncRetroAchievementsGamesForSystem failed: {ex}");
+            Snackbar.Add($"Failed to sync RetroAchievements games: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            IsSyncingRetroAchievementsGames = false;
+            StateHasChanged();
         }
     }
 }
