@@ -26,6 +26,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<GVGameExpansion> GameExpansions { get; set; }
     public DbSet<GVGameRom> GameRoms { get; set; }
     public DbSet<GVRetroAchievementConsole> RetroAchievementConsoles { get; set; }
+    public DbSet<GVRetroAchievementGame> RetroAchievementGames { get; set; }
+    public DbSet<GVRetroAchievementGameHash> RetroAchievementGameHashes { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -420,6 +422,40 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<GVRetroAchievementConsole>()
             .HasIndex(console => console.RetroAchievementsId)
             .IsUnique();
+
+        // Configure RetroAchievements Game
+        modelBuilder.Entity<GVRetroAchievementGame>()
+            .HasKey(game => game.Id);
+
+        modelBuilder.Entity<GVRetroAchievementGame>()
+            .HasIndex(game => game.RetroAchievementsGameId)
+            .IsUnique();
+
+        modelBuilder.Entity<GVRetroAchievementGame>()
+            .HasIndex(game => game.RetroAchievementConsoleId);
+
+        modelBuilder.Entity<GVRetroAchievementGame>()
+            .HasOne(game => game.RetroAchievementConsole)
+            .WithMany(console => console.Games)
+            .HasForeignKey(game => game.RetroAchievementConsoleId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Configure RetroAchievements Game Hash
+        modelBuilder.Entity<GVRetroAchievementGameHash>()
+            .HasKey(hash => hash.Id);
+
+        modelBuilder.Entity<GVRetroAchievementGameHash>()
+            .HasIndex(hash => new { hash.RetroAchievementGameId, hash.Hash })
+            .IsUnique();
+
+        modelBuilder.Entity<GVRetroAchievementGameHash>()
+            .HasIndex(hash => hash.Hash);
+
+        modelBuilder.Entity<GVRetroAchievementGameHash>()
+            .HasOne(hash => hash.RetroAchievementGame)
+            .WithMany(game => game.Hashes)
+            .HasForeignKey(hash => hash.RetroAchievementGameId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {

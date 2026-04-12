@@ -30,18 +30,6 @@ public partial class NavMenu
         await DialogService.ShowAsync<SyncModal>(string.Empty, options);
     }
 
-    private async Task OpenRetroAchievementsSyncModal()
-    {
-        DialogOptions options = new()
-        {
-            CloseButton = false,
-            MaxWidth = MaxWidth.Medium,
-            FullWidth = true
-        };
-
-        await DialogService.ShowAsync<RetroAchievementsSyncModal>(string.Empty, options);
-    }
-
     private async Task OpenAddTrackedSystemModal()
     {
         DialogOptions options = new()

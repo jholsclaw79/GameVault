@@ -51,6 +51,7 @@ builder.Services
     .AddScoped<IGDBGameGraphSyncService>()
     .AddScoped<RetroAchievementsService>()
     .AddScoped<RetroAchievementsConsoleService>()
+    .AddScoped<RetroAchievementsGameService>()
     .AddScoped<RetroAchievementsSyncService>()
     .AddSingleton<HasheousLookupService>()
     .AddScoped<SystemGameProcessingService>();

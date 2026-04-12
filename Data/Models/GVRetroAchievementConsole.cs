@@ -7,4 +7,5 @@ public class GVRetroAchievementConsole
     public required string Name { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+    public ICollection<GVRetroAchievementGame> Games { get; set; } = [];
 }

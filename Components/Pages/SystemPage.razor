@@ -28,6 +28,13 @@ else
                        Disabled="@IsProcessingGames">
                 Process Games
             </MudButton>
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Info"
+                       StartIcon="@Icons.Material.Filled.Sync"
+                       OnClick="SyncRetroAchievementsGamesForSystem"
+                       Disabled="@(IsSyncingRetroAchievementsGames || Platform.RetroAchievementConsoleId == null)">
+                Sync RA Games
+            </MudButton>
             <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" OnClick="OpenEditSystemModal">
                 Edit System
             </MudButton>

@@ -1,10 +1,12 @@
 @using GameVault.Data.IGDB
+@using GameVault.Data.RetroAchievements
 @inject IGDBPlatformTypeService PlatformTypeService
 @inject IGDBPlatformFamilyService PlatformFamilyService
 @inject IGDBPlatformLogoService PlatformLogoService
 @inject IGDBPlatformVersionService PlatformVersionService
 @inject IGDBPlatformVersionReleaseDateService PlatformVersionReleaseDateService
 @inject IGDBPlatformService PlatformService
+@inject RetroAchievementsSyncService RetroAchievementsSyncService
 
 <MudDialog>
     <DialogContent>
@@ -12,7 +14,7 @@
         @if (!_syncComplete)
         {
             <MudIcon Icon="@Icons.Material.Filled.Sync" Color="Color.Info" Size="Size.Large" Class="mb-4" />
-            <MudText Typo="Typo.h5" GutterBottom="true">Syncing IGDB Data</MudText>
+            <MudText Typo="Typo.h5" GutterBottom="true">Updating System Data</MudText>
 
             <MudProgressLinear Value="_progress" Class="my-4" />
 
