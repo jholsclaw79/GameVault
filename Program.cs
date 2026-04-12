@@ -1,6 +1,7 @@
 using GameVault.Components;
 using GameVault.Data;
 using GameVault.Data.IGDB;
+using GameVault.Data.RetroAchievements;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
 
@@ -48,6 +49,9 @@ builder.Services
     .AddScoped<IGDBGameScreenshotLinkService>()
     .AddScoped<IGDBGameVideoLinkService>()
     .AddScoped<IGDBGameGraphSyncService>()
+    .AddScoped<RetroAchievementsService>()
+    .AddScoped<RetroAchievementsConsoleService>()
+    .AddScoped<RetroAchievementsSyncService>()
     .AddSingleton<HasheousLookupService>()
     .AddScoped<SystemGameProcessingService>();
 
@@ -70,11 +74,21 @@ try
     IGDBService igdbHealth = scope.ServiceProvider.GetRequiredService<IGDBService>();
     bool igdbConnected = await igdbHealth.CanConnectAsync();
 
+    //RetroAchievements
+    RetroAchievementsService retroAchievementsHealth = scope.ServiceProvider.GetRequiredService<RetroAchievementsService>();
+    bool retroAchievementsConnected = await retroAchievementsHealth.CanConnectAsync();
+
     if (!igdbConnected)
     {
         StartupStateService.Instance.IsInitialized = true;
         StartupStateService.Instance.LockedOutBy = LockoutType.IGDB;
         Console.WriteLine("IGDB connection failed");
+    }
+    else if (!retroAchievementsConnected)
+    {
+        StartupStateService.Instance.IsInitialized = true;
+        StartupStateService.Instance.LockedOutBy = LockoutType.RetroAchievements;
+        Console.WriteLine("RetroAchievements connection failed");
     }
     else
     {

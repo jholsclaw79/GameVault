@@ -4,6 +4,7 @@ using GameVault.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GameVault.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260412190732_AddRetroAchievementConsoles")]
+    partial class AddRetroAchievementConsoles
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -591,9 +594,6 @@ namespace GameVault.Migrations
                     b.Property<long?>("PlatformTypeIGDBId")
                         .HasColumnType("bigint");
 
-                    b.Property<long?>("RetroAchievementConsoleId")
-                        .HasColumnType("bigint");
-
                     b.Property<string>("RomFolder")
                         .HasColumnType("longtext");
 
@@ -628,8 +628,6 @@ namespace GameVault.Migrations
                     b.HasIndex("PlatformLogoIGDBId");
 
                     b.HasIndex("PlatformTypeIGDBId");
-
-                    b.HasIndex("RetroAchievementConsoleId");
 
                     b.ToTable("Platforms");
                 });
@@ -1117,18 +1115,11 @@ namespace GameVault.Migrations
                         .HasPrincipalKey("IGDBId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("GameVault.Data.Models.GVRetroAchievementConsole", "RetroAchievementConsole")
-                        .WithMany()
-                        .HasForeignKey("RetroAchievementConsoleId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.Navigation("PlatformFamily");
 
                     b.Navigation("PlatformLogo");
 
                     b.Navigation("PlatformType");
-
-                    b.Navigation("RetroAchievementConsole");
                 });
 
             modelBuilder.Entity("GameVault.Data.Models.GVPlatformPlatformVersion", b =>

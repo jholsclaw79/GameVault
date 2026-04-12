@@ -61,6 +61,7 @@ public partial class SystemPage
             .Include(p => p.PlatformLogo)
             .Include(p => p.PlatformType)
             .Include(p => p.PlatformFamily)
+            .Include(p => p.RetroAchievementConsole)
             .FirstOrDefaultAsync(p => p.Id == PlatformId && p.IsTracked);
 
         PlatformVersions = await LoadPlatformVersionsAsync(context, Platform?.IGDBId, Platform?.VersionsIdsJson);
@@ -290,7 +291,8 @@ public partial class SystemPage
             ["PlatformId"] = Platform.Id,
             ["PlatformName"] = Platform.Name,
             ["RomFolder"] = Platform.RomFolder,
-            ["RomTypes"] = Platform.RomTypes
+            ["RomTypes"] = Platform.RomTypes,
+            ["RetroAchievementConsoleId"] = Platform.RetroAchievementConsoleId
         };
 
         DialogOptions options = new()
@@ -309,6 +311,15 @@ public partial class SystemPage
         
         Platform.RomFolder = editResult.RomFolder;
         Platform.RomTypes = editResult.RomTypes;
+        Platform.RetroAchievementConsoleId = editResult.RetroAchievementConsoleId;
+        Platform.RetroAchievementConsole = editResult.RetroAchievementConsoleId.HasValue
+            ? new GVRetroAchievementConsole
+            {
+                Id = editResult.RetroAchievementConsoleId.Value,
+                Name = editResult.RetroAchievementConsoleName ?? "Unknown",
+                RetroAchievementsId = 0
+            }
+            : null;
         StateHasChanged();
     }
 

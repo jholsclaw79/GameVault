@@ -27,6 +27,17 @@
                           Label="ROM Types"
                           @bind-Value="RomTypesInput"
                           FullWidth="true" />
+
+            <MudSelect T="long?"
+                       Label="RetroAchievements Console"
+                       @bind-Value="SelectedRetroAchievementConsoleId"
+                       FullWidth="true"
+                       Clearable="true">
+                @foreach (RetroAchievementConsoleOption option in RetroAchievementConsoleOptions)
+                {
+                    <MudSelectItem T="long?" Value="@option.Id">@option.Name</MudSelectItem>
+                }
+            </MudSelect>
         </MudStack>
     </DialogContent>
     <DialogActions>

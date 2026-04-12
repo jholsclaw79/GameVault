@@ -66,6 +66,9 @@ else
     <MudText Typo="Typo.body2" Class="mb-3">
         <b>Rom Types:</b> @(string.IsNullOrWhiteSpace(Platform.RomTypes) ? "Not set" : Platform.RomTypes)
     </MudText>
+    <MudText Typo="Typo.body2" Class="mb-3">
+        <b>RetroAchievements Console:</b> @(Platform.RetroAchievementConsole?.Name ?? "Not set")
+    </MudText>
 
     <MudText Typo="Typo.h5" GutterBottom="true">Versions</MudText>
     @if (!PlatformVersions.Any())
