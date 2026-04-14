@@ -160,6 +160,7 @@ else
                 <HeaderContent>
                     <MudTh>System</MudTh>
                     <MudTh>Status</MudTh>
+                    <MudTh>RetroAchievements ID</MudTh>
                     <MudTh>ROM Files</MudTh>
                 </HeaderContent>
                 <RowTemplate>
@@ -184,6 +185,7 @@ else
                             <MudChip T="string" Color="Color.Info" Variant="Variant.Outlined" Size="Size.Small" Class="ms-1">Physically Owned</MudChip>
                         }
                     </MudTd>
+                    <MudTd DataLabel="RetroAchievements ID">@context.RetroAchievementsIdLabel</MudTd>
                     <MudTd DataLabel="ROM Files">
                         @if (context.HasRom)
                         {

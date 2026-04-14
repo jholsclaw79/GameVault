@@ -11,7 +11,7 @@ namespace GameVault.Components.Pages;
 
 public partial class GamePage
 {
-    private sealed record TrackedSystemRow(long PlatformIgdbId, string PlatformName, string? RomFolder, bool HasRom, bool IsCompleted, bool IsPhysicallyOwned, List<GVGameRom> RomFiles);
+    private sealed record TrackedSystemRow(long PlatformIgdbId, string PlatformName, string? RomFolder, string RetroAchievementsIdLabel, bool HasRom, bool IsCompleted, bool IsPhysicallyOwned, List<GVGameRom> RomFiles);
     private sealed record TrackedPlatformInfo(string Name, string? RomFolder);
     private sealed record MediaCarouselItem(string Type, string Title, string PreviewUrl, string FullUrl, bool IsVideo);
     private static readonly Regex TrailingNumberRegex = new(@"\s+\d+$", RegexOptions.Compiled);
@@ -533,6 +533,7 @@ public partial class GamePage
                     group.Key,
                     info.Name,
                     info.RomFolder,
+                    BuildRetroAchievementsGameIdLabel(visibleRomRows),
                     visibleRomRows.Count > 0,
                     allRows.Any(rom => rom.IsCompleted),
                     allRows.Any(rom => rom.IsPhysicallyOwned),
@@ -579,6 +580,7 @@ public partial class GamePage
                     id,
                     FormatPlatformName(id, trackedPlatformNameLookup),
                     trackedPlatformNameLookup.GetValueOrDefault(id)?.RomFolder,
+                    BuildRetroAchievementsGameIdLabel(visibleRomRows),
                     visibleRomRows.Count > 0,
                     allRows.Any(rom => rom.IsCompleted),
                     allRows.Any(rom => rom.IsPhysicallyOwned),
@@ -590,6 +592,28 @@ public partial class GamePage
     private static bool IsSyntheticSystemStateRow(GVGameRom rom)
     {
         return IsSyntheticSystemStatePath(rom.FilePath);
+    }
+
+    private static string BuildRetroAchievementsGameIdLabel(IEnumerable<GVGameRom> romRows)
+    {
+        List<long> ids = romRows
+            .Where(rom => rom.RetroAchievementsGameId.HasValue)
+            .Select(rom => rom.RetroAchievementsGameId!.Value)
+            .Distinct()
+            .OrderBy(id => id)
+            .ToList();
+
+        if (ids.Count == 0)
+        {
+            return "N/A";
+        }
+
+        if (ids.Count == 1)
+        {
+            return ids[0].ToString();
+        }
+
+        return string.Join(", ", ids);
     }
 
     private static string? NormalizeGameCoverUrl(string? rawUrl)

@@ -236,6 +236,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasIndex(rom => rom.GameIGDBId);
 
         modelBuilder.Entity<GVGameRom>()
+            .HasIndex(rom => rom.RetroAchievementsGameId);
+
+        modelBuilder.Entity<GVGameRom>()
             .Property(rom => rom.IsCompleted)
             .HasDefaultValue(false);
 

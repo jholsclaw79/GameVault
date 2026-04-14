@@ -416,13 +416,14 @@ public partial class SystemPage
             StateHasChanged();
 
             bool success = await RetroAchievementsSyncService.SyncGamesForConsoleAsync(retroAchievementConsoleId);
+            int mappedRoms = await RetroAchievementsSyncService.CrossReferenceRomHashesAsync();
             if (success)
             {
-                Snackbar.Add($"RetroAchievements games synced for {Platform.Name}.", Severity.Success);
+                Snackbar.Add($"RetroAchievements games synced for {Platform.Name}. ROM mappings updated: {mappedRoms}.", Severity.Success);
             }
             else
             {
-                Snackbar.Add("No RetroAchievements games were synced for this system.", Severity.Warning);
+                Snackbar.Add($"No RetroAchievements games were synced for this system. ROM mappings updated: {mappedRoms}.", Severity.Warning);
             }
         }
         catch (Exception ex)
