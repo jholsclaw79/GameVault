@@ -5,7 +5,7 @@
 @inject IDbContextFactory<AppDbContext> DbContextFactory
 @inject RetroAchievementsAchievementService RetroAchievementsAchievementService
 
-<PageTitle>@(GameName is null ? "Achievements" : $"{GameName} Achievements")</PageTitle>
+<PageTitle>@(DisplayGameName is null ? "Achievements" : $"{DisplayGameName} Achievements")</PageTitle>
 
 <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-3" Style="gap: 0.5rem; flex-wrap: wrap;">
     <MudText Typo="Typo.h4" GutterBottom="false">Achievements</MudText>
@@ -26,25 +26,14 @@ else
 {
     <MudPaper Class="pa-4 mb-3">
         <MudStack Row="true" AlignItems="AlignItems.Center" Style="gap: 0.75rem; flex-wrap: wrap;">
-            <MudText Typo="Typo.h6">@GameName</MudText>
-            <MudChip T="string" Color="Color.Primary" Variant="Variant.Outlined">RA Game ID: @SelectedRetroAchievementsGameId</MudChip>
+            <MudText Typo="Typo.h6">@DisplayGameName</MudText>
+            <MudLink Href="@RetroAchievementsGameUrl"
+                     Target="_blank"
+                     Typo="Typo.body2">
+                View on RetroAchievements
+            </MudLink>
             <MudChip T="string" Color="Color.Info" Variant="Variant.Outlined">Completed: @CompletedAchievementsCount / @TotalAchievementsCount</MudChip>
         </MudStack>
-
-        @if (RetroAchievementsGameIds.Count > 1)
-        {
-            <MudSelect T="long"
-                       Label="RetroAchievements Game"
-                       Value="SelectedRetroAchievementsGameId"
-                       ValueChanged="OnSelectedRetroAchievementsGameIdChanged"
-                       Class="mt-3"
-                       Dense="true">
-                @foreach (long raGameId in RetroAchievementsGameIds)
-                {
-                    <MudSelectItem T="long" Value="@raGameId">@raGameId</MudSelectItem>
-                }
-            </MudSelect>
-        }
     </MudPaper>
 
     @if (Achievements.Count == 0)
@@ -76,7 +65,6 @@ else
                             <MudText Typo="Typo.body2" Class="mb-2">@achievement.Description</MudText>
                             <MudStack Row="true" Spacing="1">
                                 <MudChip T="string" Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small">@achievement.Points pts</MudChip>
-                                <MudChip T="string" Color="Color.Secondary" Variant="Variant.Outlined" Size="Size.Small">@achievement.TrueRatioPoints tr</MudChip>
                             </MudStack>
                         </MudCardContent>
                     </MudCard>

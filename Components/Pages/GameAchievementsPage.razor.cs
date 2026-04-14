@@ -22,11 +22,14 @@ public partial class GameAchievementsPage
     private bool IsLoading { get; set; } = true;
     private string? ErrorMessage { get; set; }
     private string? GameName { get; set; }
+    private string? SystemName { get; set; }
     private List<long> RetroAchievementsGameIds { get; set; } = [];
     private long SelectedRetroAchievementsGameId { get; set; }
     private int TotalAchievementsCount { get; set; }
     private int CompletedAchievementsCount { get; set; }
     private List<RetroAchievementsAchievementService.GameAchievementCard> Achievements { get; set; } = [];
+    private string DisplayGameName => string.IsNullOrWhiteSpace(SystemName) ? (GameName ?? "Game") : $"{GameName} ({SystemName})";
+    private string RetroAchievementsGameUrl => $"https://retroachievements.org/game/{SelectedRetroAchievementsGameId}";
 
     protected override async Task OnParametersSetAsync()
     {
@@ -35,10 +38,12 @@ public partial class GameAchievementsPage
         Achievements = [];
         TotalAchievementsCount = 0;
         CompletedAchievementsCount = 0;
+        SystemName = null;
 
         using AppDbContext context = await DbContextFactory.CreateDbContextAsync();
         GVGame? game = await context.Games
             .Include(g => g.RomFiles)
+            .ThenInclude(rom => rom.Platform)
             .FirstOrDefaultAsync(g => g.Id == GameId);
 
         if (game == null)
@@ -68,20 +73,20 @@ public partial class GameAchievementsPage
         {
             SelectedRetroAchievementsGameId = RequestedRetroAchievementsGameId.Value;
         }
-        else if (SelectedRetroAchievementsGameId <= 0 || !RetroAchievementsGameIds.Contains(SelectedRetroAchievementsGameId))
+        else
         {
             SelectedRetroAchievementsGameId = RetroAchievementsGameIds[0];
         }
 
+        SystemName = game.RomFiles
+            .Where(rom => rom.RetroAchievementsGameId == SelectedRetroAchievementsGameId && rom.Platform != null)
+            .Select(rom => rom.Platform!.Name)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(name => name)
+            .FirstOrDefault();
+
         await LoadAchievementsAndPersistCountsAsync();
         IsLoading = false;
-    }
-
-    private async Task OnSelectedRetroAchievementsGameIdChanged(long retroAchievementsGameId)
-    {
-        SelectedRetroAchievementsGameId = retroAchievementsGameId;
-        await LoadAchievementsAndPersistCountsAsync();
-        StateHasChanged();
     }
 
     private async Task LoadAchievementsAndPersistCountsAsync()
