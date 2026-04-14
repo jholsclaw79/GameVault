@@ -160,8 +160,8 @@ else
                 <HeaderContent>
                     <MudTh>System</MudTh>
                     <MudTh>Status</MudTh>
-                    <MudTh>RetroAchievements ID</MudTh>
                     <MudTh>ROM Files</MudTh>
+                    <MudTh>Achievements</MudTh>
                 </HeaderContent>
                 <RowTemplate>
                     <MudTd DataLabel="System">@context.PlatformName</MudTd>
@@ -185,7 +185,6 @@ else
                             <MudChip T="string" Color="Color.Info" Variant="Variant.Outlined" Size="Size.Small" Class="ms-1">Physically Owned</MudChip>
                         }
                     </MudTd>
-                    <MudTd DataLabel="RetroAchievements ID">@context.RetroAchievementsIdLabel</MudTd>
                     <MudTd DataLabel="ROM Files">
                         @if (context.HasRom)
                         {
@@ -205,6 +204,29 @@ else
                         else
                         {
                             <MudText Typo="Typo.caption">None</MudText>
+                        }
+                    </MudTd>
+                    <MudTd DataLabel="Achievements">
+                        @if (context.RetroAchievementsGameIds.Count == 0)
+                        {
+                            <MudText Typo="Typo.caption">No mapping</MudText>
+                        }
+                        else
+                        {
+                            <MudStack Spacing="1">
+                                @foreach (long retroAchievementsGameId in context.RetroAchievementsGameIds)
+                                {
+                                    <MudButton Variant="Variant.Text"
+                                               Color="Color.Primary"
+                                               Href="@GetAchievementsRoute(GameId, retroAchievementsGameId)"
+                                               Class="achievement-progress-button"
+                                               FullWidth="true">
+                                        <span class="achievement-progress-fill"
+                                              style="@($"width: {GetAchievementsCompletionPercent(retroAchievementsGameId):0.##}%;")"></span>
+                                        <span class="achievement-progress-label">@GetAchievementsButtonLabel(retroAchievementsGameId)</span>
+                                    </MudButton>
+                                }
+                            </MudStack>
                         }
                     </MudTd>
                 </RowTemplate>
