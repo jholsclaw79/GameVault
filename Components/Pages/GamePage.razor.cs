@@ -1,5 +1,6 @@
 using GameVault.Data;
 using GameVault.Data.Models;
+using GameVault.Data.RetroAchievements;
 using GameVault.Components.Layout;
 using Microsoft.AspNetCore.Components;
 using Microsoft.EntityFrameworkCore;
@@ -11,9 +12,19 @@ namespace GameVault.Components.Pages;
 
 public partial class GamePage
 {
-    private sealed record TrackedSystemRow(long PlatformIgdbId, string PlatformName, string? RomFolder, bool HasRom, bool IsCompleted, bool IsPhysicallyOwned, List<GVGameRom> RomFiles);
+    private sealed record TrackedSystemRow(
+        long PlatformIgdbId,
+        string PlatformName,
+        string? RomFolder,
+        List<long> RetroAchievementsGameIds,
+        string RetroAchievementsIdLabel,
+        bool HasRom,
+        bool IsCompleted,
+        bool IsPhysicallyOwned,
+        List<GVGameRom> RomFiles);
     private sealed record TrackedPlatformInfo(string Name, string? RomFolder);
     private sealed record MediaCarouselItem(string Type, string Title, string PreviewUrl, string FullUrl, bool IsVideo);
+    private sealed record AchievementProgressSummary(int CompletedAchievements, int TotalAchievements);
     private static readonly Regex TrailingNumberRegex = new(@"\s+\d+$", RegexOptions.Compiled);
 
     [Parameter]
@@ -28,9 +39,13 @@ public partial class GamePage
     [Inject]
     private NavigationManager NavigationManager { get; set; } = default!;
 
+    [Inject]
+    private RetroAchievementsAchievementService RetroAchievementsAchievementService { get; set; } = default!;
+
     private GVGame? Game { get; set; }
     private bool IsLoading { get; set; } = true;
     private List<TrackedSystemRow> TrackedSystems { get; set; } = [];
+    private Dictionary<long, AchievementProgressSummary> AchievementProgressByRaGameId { get; set; } = [];
     private List<MediaCarouselItem> MediaItems { get; set; } = [];
     private MediaCarouselItem? ExpandedMediaItem { get; set; }
     private int CurrentMediaIndex { get; set; }
@@ -95,6 +110,7 @@ public partial class GamePage
             .FirstOrDefaultAsync(game => game.Id == GameId);
 
         TrackedSystems = await BuildTrackedSystemsAsync(context, Game);
+        AchievementProgressByRaGameId = await BuildAchievementProgressByRaGameIdAsync(TrackedSystems);
         MediaItems = BuildMediaItems(Game);
         CurrentMediaIndex = 0;
         ExpandedMediaItem = null;
@@ -533,6 +549,8 @@ public partial class GamePage
                     group.Key,
                     info.Name,
                     info.RomFolder,
+                    GetRetroAchievementsGameIds(visibleRomRows),
+                    BuildRetroAchievementsGameIdLabel(visibleRomRows),
                     visibleRomRows.Count > 0,
                     allRows.Any(rom => rom.IsCompleted),
                     allRows.Any(rom => rom.IsPhysicallyOwned),
@@ -579,6 +597,8 @@ public partial class GamePage
                     id,
                     FormatPlatformName(id, trackedPlatformNameLookup),
                     trackedPlatformNameLookup.GetValueOrDefault(id)?.RomFolder,
+                    GetRetroAchievementsGameIds(visibleRomRows),
+                    BuildRetroAchievementsGameIdLabel(visibleRomRows),
                     visibleRomRows.Count > 0,
                     allRows.Any(rom => rom.IsCompleted),
                     allRows.Any(rom => rom.IsPhysicallyOwned),
@@ -590,6 +610,95 @@ public partial class GamePage
     private static bool IsSyntheticSystemStateRow(GVGameRom rom)
     {
         return IsSyntheticSystemStatePath(rom.FilePath);
+    }
+
+    private static string BuildRetroAchievementsGameIdLabel(IEnumerable<GVGameRom> romRows)
+    {
+        List<long> ids = GetRetroAchievementsGameIds(romRows);
+
+        if (ids.Count == 0)
+        {
+            return "N/A";
+        }
+
+        if (ids.Count == 1)
+        {
+            return ids[0].ToString();
+        }
+
+        return string.Join(", ", ids);
+    }
+
+    private static List<long> GetRetroAchievementsGameIds(IEnumerable<GVGameRom> romRows)
+    {
+        return romRows
+            .Where(rom => rom.RetroAchievementsGameId.HasValue)
+            .Select(rom => rom.RetroAchievementsGameId!.Value)
+            .Distinct()
+            .OrderBy(id => id)
+            .ToList();
+    }
+
+    private async Task<Dictionary<long, AchievementProgressSummary>> BuildAchievementProgressByRaGameIdAsync(IEnumerable<TrackedSystemRow> trackedSystems)
+    {
+        List<long> raGameIds = trackedSystems
+            .SelectMany(system => system.RetroAchievementsGameIds)
+            .Distinct()
+            .ToList();
+        if (raGameIds.Count == 0)
+        {
+            return [];
+        }
+
+        Dictionary<long, AchievementProgressSummary> progressByRaGameId = [];
+        foreach (long raGameId in raGameIds)
+        {
+            try
+            {
+                RetroAchievementsAchievementService.GameProgressSummary? summary =
+                    await RetroAchievementsAchievementService.GetGameProgressSummaryAsync(raGameId);
+                if (summary != null)
+                {
+                    progressByRaGameId[raGameId] = new AchievementProgressSummary(summary.CompletedAchievements, summary.TotalAchievements);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[GamePage] Failed to load achievement progress for RA game {raGameId}: {ex.Message}");
+            }
+        }
+
+        return progressByRaGameId;
+    }
+
+    private string GetAchievementsButtonLabel(long retroAchievementsGameId)
+    {
+        if (!AchievementProgressByRaGameId.TryGetValue(retroAchievementsGameId, out AchievementProgressSummary? summary))
+        {
+            return "View";
+        }
+
+        return $"{summary.CompletedAchievements}/{summary.TotalAchievements}";
+    }
+
+    private double GetAchievementsCompletionPercent(long retroAchievementsGameId)
+    {
+        if (!AchievementProgressByRaGameId.TryGetValue(retroAchievementsGameId, out AchievementProgressSummary? summary))
+        {
+            return 0;
+        }
+
+        if (summary.TotalAchievements <= 0)
+        {
+            return 0;
+        }
+
+        return Math.Clamp(summary.CompletedAchievements / (double)summary.TotalAchievements * 100d, 0d, 100d);
+    }
+
+    private static string GetAchievementsRoute(long gameId, long retroAchievementsGameId)
+    {
+        return $"/games/{gameId}/achievements?raGameId={retroAchievementsGameId}";
     }
 
     private static string? NormalizeGameCoverUrl(string? rawUrl)

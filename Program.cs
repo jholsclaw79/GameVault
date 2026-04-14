@@ -50,6 +50,7 @@ builder.Services
     .AddScoped<IGDBGameVideoLinkService>()
     .AddScoped<IGDBGameGraphSyncService>()
     .AddScoped<RetroAchievementsService>()
+    .AddScoped<RetroAchievementsAchievementService>()
     .AddScoped<RetroAchievementsConsoleService>()
     .AddScoped<RetroAchievementsGameService>()
     .AddScoped<RetroAchievementsSyncService>()

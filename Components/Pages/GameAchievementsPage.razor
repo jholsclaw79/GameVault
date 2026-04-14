@@ -1,0 +1,87 @@
+@page "/games/{GameId:long}/achievements"
+@using GameVault.Data
+@using GameVault.Data.RetroAchievements
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<AppDbContext> DbContextFactory
+@inject RetroAchievementsAchievementService RetroAchievementsAchievementService
+
+<PageTitle>@(GameName is null ? "Achievements" : $"{GameName} Achievements")</PageTitle>
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-3" Style="gap: 0.5rem; flex-wrap: wrap;">
+    <MudText Typo="Typo.h4" GutterBottom="false">Achievements</MudText>
+    <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.ArrowBack" Href="@($"/games/{GameId}")">
+        Back To Game
+    </MudButton>
+</MudStack>
+
+@if (IsLoading)
+{
+    <MudProgressCircular Color="Color.Info" Indeterminate="true" Size="Size.Large" />
+}
+else if (!string.IsNullOrWhiteSpace(ErrorMessage))
+{
+    <MudAlert Severity="Severity.Warning" Dense="true">@ErrorMessage</MudAlert>
+}
+else
+{
+    <MudPaper Class="pa-4 mb-3">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Style="gap: 0.75rem; flex-wrap: wrap;">
+            <MudText Typo="Typo.h6">@GameName</MudText>
+            <MudChip T="string" Color="Color.Primary" Variant="Variant.Outlined">RA Game ID: @SelectedRetroAchievementsGameId</MudChip>
+            <MudChip T="string" Color="Color.Info" Variant="Variant.Outlined">Completed: @CompletedAchievementsCount / @TotalAchievementsCount</MudChip>
+        </MudStack>
+
+        @if (RetroAchievementsGameIds.Count > 1)
+        {
+            <MudSelect T="long"
+                       Label="RetroAchievements Game"
+                       Value="SelectedRetroAchievementsGameId"
+                       ValueChanged="OnSelectedRetroAchievementsGameIdChanged"
+                       Class="mt-3"
+                       Dense="true">
+                @foreach (long raGameId in RetroAchievementsGameIds)
+                {
+                    <MudSelectItem T="long" Value="@raGameId">@raGameId</MudSelectItem>
+                }
+            </MudSelect>
+        }
+    </MudPaper>
+
+    @if (Achievements.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info" Dense="true">No achievements returned for this game.</MudAlert>
+    }
+    else
+    {
+        <MudGrid>
+            @foreach (RetroAchievementsAchievementService.GameAchievementCard achievement in Achievements)
+            {
+                <MudItem xs="12" sm="6" md="4" lg="3">
+                    <MudCard Class="achievement-card h-100">
+                        @if (!string.IsNullOrWhiteSpace(GetBadgeUrl(achievement.BadgeName)))
+                        {
+                            <MudCardMedia Image="@GetBadgeUrl(achievement.BadgeName)" Height="140" />
+                        }
+                        <MudCardContent>
+                            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-1" Style="gap: 0.5rem;">
+                                <MudText Typo="Typo.subtitle1">@achievement.Title</MudText>
+                                <MudChip T="string"
+                                         Color="@(achievement.IsUnlocked ? Color.Success : Color.Default)"
+                                         Variant="Variant.Outlined"
+                                         Size="Size.Small">
+                                    @(achievement.IsUnlocked ? "Unlocked" : "Locked")
+                                </MudChip>
+                            </MudStack>
+                            <MudText Typo="Typo.caption" Class="d-block mb-2">ID: @achievement.Id</MudText>
+                            <MudText Typo="Typo.body2" Class="mb-2">@achievement.Description</MudText>
+                            <MudStack Row="true" Spacing="1">
+                                <MudChip T="string" Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small">@achievement.Points pts</MudChip>
+                                <MudChip T="string" Color="Color.Secondary" Variant="Variant.Outlined" Size="Size.Small">@achievement.TrueRatioPoints tr</MudChip>
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+}

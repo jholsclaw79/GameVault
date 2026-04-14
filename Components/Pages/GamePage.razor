@@ -161,6 +161,7 @@ else
                     <MudTh>System</MudTh>
                     <MudTh>Status</MudTh>
                     <MudTh>ROM Files</MudTh>
+                    <MudTh>Achievements</MudTh>
                 </HeaderContent>
                 <RowTemplate>
                     <MudTd DataLabel="System">@context.PlatformName</MudTd>
@@ -203,6 +204,29 @@ else
                         else
                         {
                             <MudText Typo="Typo.caption">None</MudText>
+                        }
+                    </MudTd>
+                    <MudTd DataLabel="Achievements">
+                        @if (context.RetroAchievementsGameIds.Count == 0)
+                        {
+                            <MudText Typo="Typo.caption">No mapping</MudText>
+                        }
+                        else
+                        {
+                            <MudStack Spacing="1">
+                                @foreach (long retroAchievementsGameId in context.RetroAchievementsGameIds)
+                                {
+                                    <MudButton Variant="Variant.Text"
+                                               Color="Color.Primary"
+                                               Href="@GetAchievementsRoute(GameId, retroAchievementsGameId)"
+                                               Class="achievement-progress-button"
+                                               FullWidth="true">
+                                        <span class="achievement-progress-fill"
+                                              style="@($"width: {GetAchievementsCompletionPercent(retroAchievementsGameId):0.##}%;")"></span>
+                                        <span class="achievement-progress-label">@GetAchievementsButtonLabel(retroAchievementsGameId)</span>
+                                    </MudButton>
+                                }
+                            </MudStack>
                         }
                     </MudTd>
                 </RowTemplate>

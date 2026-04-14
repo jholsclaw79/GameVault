@@ -137,3 +137,35 @@
     height: 100%;
     border: 0;
 }
+
+::deep .achievement-progress-button {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.05);
+    min-height: 2rem;
+    justify-content: flex-start;
+}
+
+::deep .achievement-progress-button .mud-button-label {
+    width: 100%;
+}
+
+.achievement-progress-fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    background: rgba(76, 175, 80, 0.35);
+    z-index: 0;
+}
+
+.achievement-progress-label {
+    position: relative;
+    z-index: 1;
+    font-weight: 600;
+    font-size: 0.78rem;
+    width: 100%;
+    text-align: left;
+    padding-inline: 0.35rem;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}

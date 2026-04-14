@@ -31,7 +31,9 @@ public partial class RetroAchievementsSyncModal : ComponentBase
     {
         _syncItems =
         [
-            new SyncItem { Name = "Consoles" }
+            new SyncItem { Name = "Consoles" },
+            new SyncItem { Name = "Games + Hashes" },
+            new SyncItem { Name = "ROM Hash Cross-Reference" }
         ];
     }
 
@@ -56,9 +58,27 @@ public partial class RetroAchievementsSyncModal : ComponentBase
                 failedCount++;
             }
 
+            await UpdateSyncStatus(1, SyncStatus.InProgress);
+            bool gamesSyncSuccess = await RetroAchievementsSyncService.SyncGamesAsync();
+            if (gamesSyncSuccess)
+            {
+                await UpdateSyncStatus(1, SyncStatus.Completed);
+                completedCount++;
+            }
+            else
+            {
+                await UpdateSyncStatus(1, SyncStatus.Failed);
+                failedCount++;
+            }
+
+            await UpdateSyncStatus(2, SyncStatus.InProgress);
+            int mappedRoms = await RetroAchievementsSyncService.CrossReferenceRomHashesAsync();
+            await UpdateSyncStatus(2, SyncStatus.Completed);
+            completedCount++;
+
             _progress = 100;
             _syncComplete = true;
-            _syncSummary = $"Completed {completedCount} sync(s)";
+            _syncSummary = $"Completed {completedCount} sync(s). ROM mappings updated: {mappedRoms}.";
             if (failedCount > 0)
             {
                 _syncSummary += $" with {failedCount} failure(s)";

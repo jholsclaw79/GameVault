@@ -64,6 +64,8 @@ public class GVGame : IIGDBSyncable
     public bool IsLocalOnly { get; set; }
     public bool IsCompleted { get; set; }
     public bool IsPhysicallyOwned { get; set; }
+    public int? RetroAchievementsTotalAchievements { get; set; }
+    public int? RetroAchievementsCompletedAchievements { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public ICollection<GVGameRom> RomFiles { get; set; } = [];
