@@ -34,16 +34,51 @@ else
             </MudLink>
             <MudChip T="string" Color="Color.Info" Variant="Variant.Outlined">Completed: @CompletedAchievementsCount / @TotalAchievementsCount</MudChip>
         </MudStack>
+
+        <MudStack Row="true" AlignItems="AlignItems.End" Style="gap: 0.75rem; flex-wrap: wrap;" Class="mt-3">
+            <MudSelect T="AchievementFilterOption"
+                       Label="Filter"
+                       @bind-Value="SelectedFilter"
+                       Dense="true"
+                       Style="min-width: 180px;">
+                <MudSelectItem T="AchievementFilterOption" Value="@AchievementFilterOption.All">All Achievements</MudSelectItem>
+                <MudSelectItem T="AchievementFilterOption" Value="@AchievementFilterOption.Completed">Completed</MudSelectItem>
+                <MudSelectItem T="AchievementFilterOption" Value="@AchievementFilterOption.NotCompleted">Not Completed</MudSelectItem>
+            </MudSelect>
+
+            <MudSelect T="AchievementSortField"
+                       Label="Sort By"
+                       @bind-Value="SelectedSortField"
+                       Dense="true"
+                       Style="min-width: 150px;">
+                <MudSelectItem T="AchievementSortField" Value="@AchievementSortField.Id">ID</MudSelectItem>
+                <MudSelectItem T="AchievementSortField" Value="@AchievementSortField.Title">Title</MudSelectItem>
+                <MudSelectItem T="AchievementSortField" Value="@AchievementSortField.Points">Points</MudSelectItem>
+            </MudSelect>
+
+            <MudSelect T="bool"
+                       Label="Direction"
+                       @bind-Value="SortDescending"
+                       Dense="true"
+                       Style="min-width: 140px;">
+                <MudSelectItem T="bool" Value="@false">Ascending</MudSelectItem>
+                <MudSelectItem T="bool" Value="@true">Descending</MudSelectItem>
+            </MudSelect>
+
+            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="ResetFiltersAndSort">
+                Reset
+            </MudButton>
+        </MudStack>
     </MudPaper>
 
-    @if (Achievements.Count == 0)
+    @if (VisibleAchievements.Count == 0)
     {
-        <MudAlert Severity="Severity.Info" Dense="true">No achievements returned for this game.</MudAlert>
+        <MudAlert Severity="Severity.Info" Dense="true">No achievements match the current filter.</MudAlert>
     }
     else
     {
         <MudGrid>
-            @foreach (RetroAchievementsAchievementService.GameAchievementCard achievement in Achievements)
+            @foreach (RetroAchievementsAchievementService.GameAchievementCard achievement in VisibleAchievements)
             {
                 <MudItem xs="12" sm="6" md="4" lg="3">
                     <MudCard Class="achievement-card h-100"
