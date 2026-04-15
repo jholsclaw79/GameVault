@@ -243,7 +243,9 @@ else
                 <div class="games-grid">
                     @foreach (GVGame game in MatchedGames)
                     {
-                        <GameCard Game="game" />
+                        <GameCard Game="game"
+                                  AchievementsCompleted="@GetAchievementsCompleted(game)"
+                                  AchievementsTotal="@GetAchievementsTotal(game)" />
                     }
                 </div>
             }
@@ -264,7 +266,9 @@ else
                 <div class="games-grid">
                     @foreach (GVGame game in MissingGames)
                     {
-                        <GameCard Game="game" />
+                        <GameCard Game="game"
+                                  AchievementsCompleted="@GetAchievementsCompleted(game)"
+                                  AchievementsTotal="@GetAchievementsTotal(game)" />
                     }
                 </div>
             }
@@ -285,7 +289,9 @@ else
                 <div class="games-grid">
                     @foreach (GVGame game in UnknownGames)
                     {
-                        <GameCard Game="game" />
+                        <GameCard Game="game"
+                                  AchievementsCompleted="@GetAchievementsCompleted(game)"
+                                  AchievementsTotal="@GetAchievementsTotal(game)" />
                     }
                 </div>
             }

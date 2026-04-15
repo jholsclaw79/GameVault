@@ -221,6 +221,9 @@ public partial class GamePage
                     PlatformName = system.PlatformName,
                     RomFolder = system.RomFolder,
                     RomLocation = system.RomFiles.FirstOrDefault()?.FilePath,
+                    RetroAchievementsGameId = system.RetroAchievementsGameIds.FirstOrDefault() > 0
+                        ? system.RetroAchievementsGameIds.First()
+                        : null,
                     IsCompleted = system.IsCompleted,
                     IsPhysicallyOwned = system.IsPhysicallyOwned
                 })
@@ -293,9 +296,16 @@ public partial class GamePage
 
         targetGame.UpdatedAt = DateTime.UtcNow;
 
-        if (edit.PlatformIgdbId.HasValue)
+        foreach (GameEditSystemOption systemEdit in edit.SystemEdits)
         {
-            await UpsertSystemRomAndStateAsync(context, targetGame, edit.PlatformIgdbId.Value, edit.RomLocation, edit.IsCompleted, edit.IsPhysicallyOwned);
+            await UpsertSystemRomAndStateAsync(
+                context,
+                targetGame,
+                systemEdit.PlatformIgdbId,
+                systemEdit.RomLocation,
+                systemEdit.RetroAchievementsGameId,
+                systemEdit.IsCompleted,
+                systemEdit.IsPhysicallyOwned);
         }
 
         if (sourceGame.Id != targetGame.Id && sourceGame.IsLocalOnly)
@@ -346,6 +356,7 @@ public partial class GamePage
         GVGame game,
         long platformIgdbId,
         string? romLocation,
+        long? retroAchievementsGameId,
         bool isCompleted,
         bool isPhysicallyOwned)
     {
@@ -365,13 +376,13 @@ public partial class GamePage
         }
         else
         {
-            await UpsertRomPathAsync(context, game, platformIgdbId, normalizedPath, isCompleted, isPhysicallyOwned);
+            await UpsertRomPathAsync(context, game, platformIgdbId, normalizedPath, retroAchievementsGameId, isCompleted, isPhysicallyOwned);
         }
 
         List<GVGameRom> platformRows = await context.GameRoms
             .Where(item => item.GameIGDBId == game.IGDBId && item.PlatformIGDBId == platformIgdbId)
             .ToListAsync();
-        if (platformRows.Count == 0 && (isCompleted || isPhysicallyOwned))
+        if (platformRows.Count == 0 && (isCompleted || isPhysicallyOwned || retroAchievementsGameId.HasValue))
         {
             string syntheticPath = BuildSystemStatePath(game.IGDBId, platformIgdbId);
             GVGameRom? syntheticRow = await context.GameRoms
@@ -387,6 +398,7 @@ public partial class GamePage
                     Md5 = "manual",
                     Sha1 = "manual",
                     FileSizeBytes = 0,
+                    RetroAchievementsGameId = retroAchievementsGameId,
                     IsCompleted = isCompleted,
                     IsPhysicallyOwned = isPhysicallyOwned,
                     CreatedAt = DateTime.UtcNow,
@@ -397,6 +409,7 @@ public partial class GamePage
             else
             {
                 syntheticRow.GameIGDBId = game.IGDBId;
+                syntheticRow.RetroAchievementsGameId = retroAchievementsGameId;
                 syntheticRow.IsCompleted = isCompleted;
                 syntheticRow.IsPhysicallyOwned = isPhysicallyOwned;
                 syntheticRow.UpdatedAt = DateTime.UtcNow;
@@ -407,9 +420,21 @@ public partial class GamePage
 
         foreach (GVGameRom row in platformRows)
         {
+            row.RetroAchievementsGameId = retroAchievementsGameId;
             row.IsCompleted = isCompleted;
             row.IsPhysicallyOwned = isPhysicallyOwned;
             row.UpdatedAt = DateTime.UtcNow;
+        }
+
+        if (!isCompleted && !isPhysicallyOwned && !retroAchievementsGameId.HasValue && string.IsNullOrWhiteSpace(normalizedPath))
+        {
+            List<GVGameRom> syntheticRowsToRemove = platformRows
+                .Where(row => IsSyntheticSystemStatePath(row.FilePath))
+                .ToList();
+            if (syntheticRowsToRemove.Count > 0)
+            {
+                context.GameRoms.RemoveRange(syntheticRowsToRemove);
+            }
         }
     }
 
@@ -418,6 +443,7 @@ public partial class GamePage
         GVGame game,
         long platformIgdbId,
         string normalizedPath,
+        long? retroAchievementsGameId,
         bool isCompleted,
         bool isPhysicallyOwned)
     {
@@ -451,6 +477,7 @@ public partial class GamePage
                 Md5 = md5,
                 Sha1 = sha1,
                 FileSizeBytes = fileSize,
+                RetroAchievementsGameId = retroAchievementsGameId,
                 IsCompleted = isCompleted,
                 IsPhysicallyOwned = isPhysicallyOwned,
                 CreatedAt = DateTime.UtcNow,
@@ -464,6 +491,7 @@ public partial class GamePage
         rom.Md5 = md5;
         rom.Sha1 = sha1;
         rom.FileSizeBytes = fileSize;
+        rom.RetroAchievementsGameId = retroAchievementsGameId;
         rom.IsCompleted = isCompleted;
         rom.IsPhysicallyOwned = isPhysicallyOwned;
         rom.UpdatedAt = DateTime.UtcNow;
@@ -549,8 +577,8 @@ public partial class GamePage
                     group.Key,
                     info.Name,
                     info.RomFolder,
-                    GetRetroAchievementsGameIds(visibleRomRows),
-                    BuildRetroAchievementsGameIdLabel(visibleRomRows),
+                    GetRetroAchievementsGameIds(allRows),
+                    BuildRetroAchievementsGameIdLabel(allRows),
                     visibleRomRows.Count > 0,
                     allRows.Any(rom => rom.IsCompleted),
                     allRows.Any(rom => rom.IsPhysicallyOwned),
@@ -597,8 +625,8 @@ public partial class GamePage
                     id,
                     FormatPlatformName(id, trackedPlatformNameLookup),
                     trackedPlatformNameLookup.GetValueOrDefault(id)?.RomFolder,
-                    GetRetroAchievementsGameIds(visibleRomRows),
-                    BuildRetroAchievementsGameIdLabel(visibleRomRows),
+                    GetRetroAchievementsGameIds(allRows),
+                    BuildRetroAchievementsGameIdLabel(allRows),
                     visibleRomRows.Count > 0,
                     allRows.Any(rom => rom.IsCompleted),
                     allRows.Any(rom => rom.IsPhysicallyOwned),

@@ -11,6 +11,8 @@ namespace GameVault.Components.Pages;
 
 public partial class SystemPage
 {
+    private sealed record AchievementCardProgress(int CompletedAchievements, int TotalAchievements);
+
     [Inject]
     private IDialogService DialogService { get; set; } = default!;
     
@@ -40,6 +42,7 @@ public partial class SystemPage
     private List<GVGame> MatchedGames { get; set; } = [];
     private List<GVGame> MissingGames { get; set; } = [];
     private List<GVGame> UnknownGames { get; set; } = [];
+    private Dictionary<long, AchievementCardProgress> AchievementProgressByGameId { get; set; } = [];
     private bool HasSingleVersion => PlatformVersions.Count == 1;
     private bool HasMultipleVersions => PlatformVersions.Count > 1;
     private GVPlatformVersion? CurrentVersion =>
@@ -71,6 +74,7 @@ public partial class SystemPage
 
         PlatformVersions = await LoadPlatformVersionsAsync(context, Platform?.IGDBId, Platform?.VersionsIdsJson);
         (MatchedGames, MissingGames, UnknownGames) = await LoadCategorizedPlatformGamesAsync(context, Platform?.IGDBId);
+        AchievementProgressByGameId = await BuildAchievementProgressByGameIdAsync(context, Platform?.IGDBId, [.. MatchedGames, .. MissingGames, .. UnknownGames]);
         if (PlatformVersions.Count == 0)
         {
             CurrentVersionIndex = 0;
@@ -212,6 +216,90 @@ public partial class SystemPage
     {
         List<long>? platformIds = DeserializeIds(game.PlatformsIdsJson);
         return platformIds?.Contains(platformIgdbId) == true;
+    }
+
+    private async Task<Dictionary<long, AchievementCardProgress>> BuildAchievementProgressByGameIdAsync(
+        AppDbContext context,
+        long? platformIgdbId,
+        IReadOnlyCollection<GVGame> games)
+    {
+        if (platformIgdbId == null || games.Count == 0)
+        {
+            return [];
+        }
+
+        List<long> gameIgdbIds = games
+            .Select(game => game.IGDBId)
+            .Distinct()
+            .ToList();
+        if (gameIgdbIds.Count == 0)
+        {
+            return [];
+        }
+
+        List<(long GameIGDBId, long RetroAchievementsGameId)> romAchievementMappings = await context.GameRoms
+            .Where(rom =>
+                rom.PlatformIGDBId == platformIgdbId.Value &&
+                rom.RetroAchievementsGameId.HasValue &&
+                gameIgdbIds.Contains(rom.GameIGDBId))
+            .Select(rom => new ValueTuple<long, long>(rom.GameIGDBId, rom.RetroAchievementsGameId!.Value))
+            .Distinct()
+            .ToListAsync();
+
+        Dictionary<long, List<long>> raGameIdsByGameIgdbId = romAchievementMappings
+            .GroupBy(mapping => mapping.GameIGDBId)
+            .ToDictionary(
+                group => group.Key,
+                group => group.Select(mapping => mapping.RetroAchievementsGameId).Distinct().ToList());
+
+        List<long> raGameIds = romAchievementMappings
+            .Select(mapping => mapping.RetroAchievementsGameId)
+            .Distinct()
+            .ToList();
+
+        Dictionary<long, int> achievementTotalsByRaGameId = raGameIds.Count == 0
+            ? []
+            : await context.RetroAchievementGames
+                .Where(game => raGameIds.Contains(game.RetroAchievementsGameId))
+                .Select(game => new { game.RetroAchievementsGameId, game.AchievementsCount })
+                .ToDictionaryAsync(item => item.RetroAchievementsGameId, item => item.AchievementsCount);
+
+        Dictionary<long, AchievementCardProgress> progressByGameId = [];
+        foreach (GVGame game in games)
+        {
+            int cachedTotal = game.RetroAchievementsTotalAchievements.GetValueOrDefault();
+            int mappedTotal = raGameIdsByGameIgdbId.TryGetValue(game.IGDBId, out List<long>? mappedRaGameIds)
+                ? mappedRaGameIds
+                    .Select(raGameId => achievementTotalsByRaGameId.GetValueOrDefault(raGameId))
+                    .DefaultIfEmpty(0)
+                    .Max()
+                : 0;
+
+            int total = cachedTotal > 0 ? cachedTotal : mappedTotal;
+            if (total <= 0)
+            {
+                continue;
+            }
+
+            int completed = Math.Clamp(game.RetroAchievementsCompletedAchievements.GetValueOrDefault(), 0, total);
+            progressByGameId[game.Id] = new AchievementCardProgress(completed, total);
+        }
+
+        return progressByGameId;
+    }
+
+    private int? GetAchievementsTotal(GVGame game)
+    {
+        return AchievementProgressByGameId.TryGetValue(game.Id, out AchievementCardProgress? progress)
+            ? progress.TotalAchievements
+            : null;
+    }
+
+    private int? GetAchievementsCompleted(GVGame game)
+    {
+        return AchievementProgressByGameId.TryGetValue(game.Id, out AchievementCardProgress? progress)
+            ? progress.CompletedAchievements
+            : null;
     }
 
     private static List<GVPlatformVersion> SortVersions(List<GVPlatformVersion> versions)
@@ -377,6 +465,7 @@ public partial class SystemPage
             {
                 using AppDbContext context = await DbContextFactory.CreateDbContextAsync();
                 (MatchedGames, MissingGames, UnknownGames) = await LoadCategorizedPlatformGamesAsync(context, Platform.IGDBId);
+                AchievementProgressByGameId = await BuildAchievementProgressByGameIdAsync(context, Platform.IGDBId, [.. MatchedGames, .. MissingGames, .. UnknownGames]);
             }
 
             Snackbar.Add(ProcessResultMessage, result.IsSuccess ? Severity.Success : Severity.Warning);
@@ -417,6 +506,11 @@ public partial class SystemPage
 
             bool success = await RetroAchievementsSyncService.SyncGamesForConsoleAsync(retroAchievementConsoleId);
             int mappedRoms = await RetroAchievementsSyncService.CrossReferenceRomHashesAsync();
+
+            using AppDbContext context = await DbContextFactory.CreateDbContextAsync();
+            (MatchedGames, MissingGames, UnknownGames) = await LoadCategorizedPlatformGamesAsync(context, Platform.IGDBId);
+            AchievementProgressByGameId = await BuildAchievementProgressByGameIdAsync(context, Platform.IGDBId, [.. MatchedGames, .. MissingGames, .. UnknownGames]);
+
             if (success)
             {
                 Snackbar.Add($"RetroAchievements games synced for {Platform.Name}. ROM mappings updated: {mappedRoms}.", Severity.Success);

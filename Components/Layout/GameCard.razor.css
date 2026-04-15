@@ -74,3 +74,59 @@
     text-decoration: none;
     display: inline-block;
 }
+
+.game-card-text-area {
+    background: var(--mud-palette-surface);
+    padding: 0.4rem 0.6rem;
+    height: 96px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 0.35rem;
+}
+
+.game-card-title {
+    text-align: center;
+    line-height: 1.35rem;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    min-height: 2.7rem;
+    max-height: 2.7rem;
+}
+
+.game-card-title-with-progress {
+    min-height: 2.3rem;
+    max-height: 2.3rem;
+}
+
+.game-card-achievement-progress {
+    position: relative;
+    overflow: hidden;
+    border-radius: 4px;
+    min-height: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.game-card-achievement-progress-fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    background: rgba(76, 175, 80, 0.35);
+}
+
+.game-card-achievement-progress-label {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
