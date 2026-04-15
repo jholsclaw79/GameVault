@@ -1,0 +1,4 @@
+::deep .achievement-card-completed {
+    background-color: rgba(76, 175, 80, 0.22) !important;
+    border-color: rgba(76, 175, 80, 0.55) !important;
+}

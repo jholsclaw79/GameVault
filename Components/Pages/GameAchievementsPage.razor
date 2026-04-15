@@ -46,7 +46,8 @@ else
             @foreach (RetroAchievementsAchievementService.GameAchievementCard achievement in Achievements)
             {
                 <MudItem xs="12" sm="6" md="4" lg="3">
-                    <MudCard Class="achievement-card h-100">
+                    <MudCard Class="achievement-card h-100"
+                             Style="@(achievement.IsUnlocked ? "background-color: rgba(46, 125, 50, 0.45); border: 1px solid rgba(129, 199, 132, 0.85);" : string.Empty)">
                         @if (!string.IsNullOrWhiteSpace(GetBadgeUrl(achievement.BadgeName)))
                         {
                             <MudCardMedia Image="@GetBadgeUrl(achievement.BadgeName)" Height="140" />
