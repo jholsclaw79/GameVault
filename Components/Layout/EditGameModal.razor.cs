@@ -1,3 +1,5 @@
+using GameVault.Data;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
@@ -23,10 +25,14 @@ public partial class EditGameModal : ComponentBase
     [Inject]
     private IDialogService DialogService { get; set; } = default!;
 
+    [Inject]
+    private IDbContextFactory<AppDbContext> DbContextFactory { get; set; } = default!;
+
     private bool IsSaving { get; set; }
     private string? ErrorMessage { get; set; }
     private long? IgdbIdInput { get; set; }
     private string RomLocationInput { get; set; } = string.Empty;
+    private long? RetroAchievementsGameIdInput { get; set; }
     private bool IsCompletedInput { get; set; }
     private bool IsPhysicallyOwnedInput { get; set; }
     private long? SelectedPlatformIgdbId { get; set; }
@@ -59,6 +65,7 @@ public partial class EditGameModal : ComponentBase
             IsCompletedInput = false;
             IsPhysicallyOwnedInput = false;
             RomLocationInput = string.Empty;
+            RetroAchievementsGameIdInput = null;
             return;
         }
 
@@ -68,12 +75,14 @@ public partial class EditGameModal : ComponentBase
             IsCompletedInput = false;
             IsPhysicallyOwnedInput = false;
             RomLocationInput = string.Empty;
+            RetroAchievementsGameIdInput = null;
             return;
         }
 
         IsCompletedInput = option.IsCompleted;
         IsPhysicallyOwnedInput = option.IsPhysicallyOwned;
         RomLocationInput = option.RomLocation ?? string.Empty;
+        RetroAchievementsGameIdInput = option.RetroAchievementsGameId;
     }
 
     private void PersistSelectedSystemState()
@@ -92,6 +101,7 @@ public partial class EditGameModal : ComponentBase
         option.RomLocation = string.IsNullOrWhiteSpace(RomLocationInput) ? null : RomLocationInput.Trim();
         option.IsCompleted = IsCompletedInput;
         option.IsPhysicallyOwned = IsPhysicallyOwnedInput;
+        option.RetroAchievementsGameId = RetroAchievementsGameIdInput;
     }
 
     private async Task OpenRomFileSelector()
@@ -135,7 +145,7 @@ public partial class EditGameModal : ComponentBase
         return Task.CompletedTask;
     }
 
-    private Task Save()
+    private async Task Save()
     {
         IsSaving = true;
         ErrorMessage = null;
@@ -145,29 +155,60 @@ public partial class EditGameModal : ComponentBase
         {
             ErrorMessage = "Select a system before editing ROM location, completed, or physical ownership.";
             IsSaving = false;
-            return Task.CompletedTask;
+            return;
+        }
+
+        List<long> requestedRetroAchievementIds = SystemOptions
+            .Where(option => option.RetroAchievementsGameId.HasValue)
+            .Select(option => option.RetroAchievementsGameId!.Value)
+            .Distinct()
+            .ToList();
+
+        if (requestedRetroAchievementIds.Count > 0)
+        {
+            using AppDbContext context = await DbContextFactory.CreateDbContextAsync();
+            HashSet<long> knownRetroAchievementIds = await context.RetroAchievementGames
+                .Where(game => requestedRetroAchievementIds.Contains(game.RetroAchievementsGameId))
+                .Select(game => game.RetroAchievementsGameId)
+                .ToHashSetAsync();
+
+            List<long> invalidIds = requestedRetroAchievementIds
+                .Where(id => !knownRetroAchievementIds.Contains(id))
+                .OrderBy(id => id)
+                .ToList();
+            if (invalidIds.Count > 0)
+            {
+                ErrorMessage = invalidIds.Count == 1
+                    ? $"RetroAchievements game ID {invalidIds[0]} is not stored locally. Try again with a valid ID."
+                    : $"RetroAchievements game IDs {string.Join(", ", invalidIds)} are not stored locally. Try again with valid IDs.";
+                IsSaving = false;
+                return;
+            }
         }
 
         MudDialog.Close(DialogResult.Ok(new EditGameResult
         {
             IgdbId = IgdbIdInput,
-            RomLocation = string.IsNullOrWhiteSpace(RomLocationInput) ? null : RomLocationInput.Trim(),
-            PlatformIgdbId = SelectedPlatformIgdbId,
-            IsCompleted = IsCompletedInput,
-            IsPhysicallyOwned = IsPhysicallyOwnedInput
+            SystemEdits = SystemOptions
+                .Select(option => new GameEditSystemOption
+                {
+                    PlatformIgdbId = option.PlatformIgdbId,
+                    PlatformName = option.PlatformName,
+                    RomFolder = option.RomFolder,
+                    RomLocation = option.RomLocation,
+                    RetroAchievementsGameId = option.RetroAchievementsGameId,
+                    IsCompleted = option.IsCompleted,
+                    IsPhysicallyOwned = option.IsPhysicallyOwned
+                })
+                .ToList()
         }));
-
-        return Task.CompletedTask;
     }
 }
 
 public class EditGameResult
 {
     public long? IgdbId { get; set; }
-    public string? RomLocation { get; set; }
-    public long? PlatformIgdbId { get; set; }
-    public bool IsCompleted { get; set; }
-    public bool IsPhysicallyOwned { get; set; }
+    public List<GameEditSystemOption> SystemEdits { get; set; } = [];
 }
 
 public class GameEditSystemOption
@@ -176,6 +217,7 @@ public class GameEditSystemOption
     public string PlatformName { get; set; } = string.Empty;
     public string? RomFolder { get; set; }
     public string? RomLocation { get; set; }
+    public long? RetroAchievementsGameId { get; set; }
     public bool IsCompleted { get; set; }
     public bool IsPhysicallyOwned { get; set; }
 }

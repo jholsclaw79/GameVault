@@ -51,6 +51,15 @@
                 </MudButton>
             </MudStack>
 
+            <MudNumericField T="long?"
+                             Label="RetroAchievements Game ID (Selected System)"
+                             @bind-Value="RetroAchievementsGameIdInput"
+                             Min="1"
+                             HideSpinButtons="true"
+                             FullWidth="true"
+                             Clearable="true"
+                             Disabled="@(!SelectedPlatformIgdbId.HasValue)" />
+
             <MudCheckBox T="bool" @bind-Value="IsCompletedInput" Label="Completed (Selected System)" Disabled="@(!SelectedPlatformIgdbId.HasValue)" />
             <MudCheckBox T="bool" @bind-Value="IsPhysicallyOwnedInput" Label="Physically Owned (Selected System)" Disabled="@(!SelectedPlatformIgdbId.HasValue)" />
         </MudStack>
