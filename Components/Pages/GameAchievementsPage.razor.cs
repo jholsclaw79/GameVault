@@ -9,6 +9,20 @@ namespace GameVault.Components.Pages;
 
 public partial class GameAchievementsPage
 {
+    private enum AchievementFilterOption
+    {
+        All,
+        Completed,
+        NotCompleted
+    }
+
+    private enum AchievementSortField
+    {
+        Id,
+        Title,
+        Points
+    }
+
     [Parameter]
     public long GameId { get; set; }
 
@@ -28,8 +42,13 @@ public partial class GameAchievementsPage
     private int TotalAchievementsCount { get; set; }
     private int CompletedAchievementsCount { get; set; }
     private List<RetroAchievementsAchievementService.GameAchievementCard> Achievements { get; set; } = [];
+    private AchievementFilterOption SelectedFilter { get; set; } = AchievementFilterOption.All;
+    private AchievementSortField SelectedSortField { get; set; } = AchievementSortField.Id;
+    private bool SortDescending { get; set; }
     private string DisplayGameName => string.IsNullOrWhiteSpace(SystemName) ? (GameName ?? "Game") : $"{GameName} ({SystemName})";
     private string RetroAchievementsGameUrl => $"https://retroachievements.org/game/{SelectedRetroAchievementsGameId}";
+    private List<RetroAchievementsAchievementService.GameAchievementCard> VisibleAchievements =>
+        ApplySort(ApplyFilter(Achievements)).ToList();
 
     protected override async Task OnParametersSetAsync()
     {
@@ -135,6 +154,38 @@ public partial class GameAchievementsPage
         {
             IsLoading = false;
         }
+    }
+
+    private IEnumerable<RetroAchievementsAchievementService.GameAchievementCard> ApplyFilter(
+        IEnumerable<RetroAchievementsAchievementService.GameAchievementCard> source)
+    {
+        return SelectedFilter switch
+        {
+            AchievementFilterOption.Completed => source.Where(item => item.IsUnlocked),
+            AchievementFilterOption.NotCompleted => source.Where(item => !item.IsUnlocked),
+            _ => source
+        };
+    }
+
+    private IEnumerable<RetroAchievementsAchievementService.GameAchievementCard> ApplySort(
+        IEnumerable<RetroAchievementsAchievementService.GameAchievementCard> source)
+    {
+        return (SelectedSortField, SortDescending) switch
+        {
+            (AchievementSortField.Title, true) => source.OrderByDescending(item => item.Title).ThenBy(item => item.Id),
+            (AchievementSortField.Title, false) => source.OrderBy(item => item.Title).ThenBy(item => item.Id),
+            (AchievementSortField.Points, true) => source.OrderByDescending(item => item.Points).ThenBy(item => item.Id),
+            (AchievementSortField.Points, false) => source.OrderBy(item => item.Points).ThenBy(item => item.Id),
+            (AchievementSortField.Id, true) => source.OrderByDescending(item => item.Id),
+            _ => source.OrderBy(item => item.Id)
+        };
+    }
+
+    private void ResetFiltersAndSort()
+    {
+        SelectedFilter = AchievementFilterOption.All;
+        SelectedSortField = AchievementSortField.Id;
+        SortDescending = false;
     }
 
     private static string? GetBadgeUrl(string? badgeName)
