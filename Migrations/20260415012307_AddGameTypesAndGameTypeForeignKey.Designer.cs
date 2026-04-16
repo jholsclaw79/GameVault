@@ -4,6 +4,7 @@ using GameVault.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GameVault.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260415012307_AddGameTypesAndGameTypeForeignKey")]
+    partial class AddGameTypesAndGameTypeForeignKey
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -653,124 +656,6 @@ namespace GameVault.Migrations
                         .IsUnique();
 
                     b.ToTable("Genres");
-                });
-
-            modelBuilder.Entity("GameVault.Data.Models.GVInvolvedCompany", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<string>("Checksum")
-                        .HasColumnType("longtext");
-
-                    b.Property<long?>("CompanyIGDBId")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<bool?>("Developer")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<long>("GameIGDBId")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("IGDBId")
-                        .HasColumnType("bigint");
-
-                    b.Property<bool?>("Porting")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<bool?>("Publisher")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<bool?>("Supporting")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("GameIGDBId");
-
-                    b.HasIndex("IGDBId")
-                        .IsUnique();
-
-                    b.ToTable("InvolvedCompanies");
-                });
-
-            modelBuilder.Entity("GameVault.Data.Models.GVLanguage", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<long>("IGDBId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("IGDBId")
-                        .IsUnique();
-
-                    b.ToTable("Languages");
-                });
-
-            modelBuilder.Entity("GameVault.Data.Models.GVLanguageSupport", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<string>("Checksum")
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<long>("GameIGDBId")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("IGDBId")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("LanguageIGDBId")
-                        .HasColumnType("bigint");
-
-                    b.Property<long?>("LanguageSupportTypeIGDBId")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("GameIGDBId");
-
-                    b.HasIndex("IGDBId")
-                        .IsUnique();
-
-                    b.HasIndex("LanguageIGDBId");
-
-                    b.ToTable("LanguageSupports");
                 });
 
             modelBuilder.Entity("GameVault.Data.Models.GVPlatform", b =>
@@ -1417,39 +1302,6 @@ namespace GameVault.Migrations
                     b.Navigation("Video");
                 });
 
-            modelBuilder.Entity("GameVault.Data.Models.GVInvolvedCompany", b =>
-                {
-                    b.HasOne("GameVault.Data.Models.GVGame", "Game")
-                        .WithMany("InvolvedCompanyLinks")
-                        .HasForeignKey("GameIGDBId")
-                        .HasPrincipalKey("IGDBId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Game");
-                });
-
-            modelBuilder.Entity("GameVault.Data.Models.GVLanguageSupport", b =>
-                {
-                    b.HasOne("GameVault.Data.Models.GVGame", "Game")
-                        .WithMany("LanguageSupportLinks")
-                        .HasForeignKey("GameIGDBId")
-                        .HasPrincipalKey("IGDBId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("GameVault.Data.Models.GVLanguage", "Language")
-                        .WithMany("GameLanguageSupports")
-                        .HasForeignKey("LanguageIGDBId")
-                        .HasPrincipalKey("IGDBId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Game");
-
-                    b.Navigation("Language");
-                });
-
             modelBuilder.Entity("GameVault.Data.Models.GVPlatform", b =>
                 {
                     b.HasOne("GameVault.Data.Models.GVPlatformFamily", "PlatformFamily")
@@ -1559,20 +1411,11 @@ namespace GameVault.Migrations
 
                     b.Navigation("GenreLinks");
 
-                    b.Navigation("InvolvedCompanyLinks");
-
-                    b.Navigation("LanguageSupportLinks");
-
                     b.Navigation("RomFiles");
 
                     b.Navigation("ScreenshotLinks");
 
                     b.Navigation("VideoLinks");
-                });
-
-            modelBuilder.Entity("GameVault.Data.Models.GVLanguage", b =>
-                {
-                    b.Navigation("GameLanguageSupports");
                 });
 
             modelBuilder.Entity("GameVault.Data.Models.GVPlatform", b =>

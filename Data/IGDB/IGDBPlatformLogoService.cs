@@ -6,14 +6,15 @@ namespace GameVault.Data.IGDB;
 
 public class IGDBPlatformLogoService(IGDBSyncService syncService)
 {
-    public async Task<bool> SyncPlatformLogosAsync()
+    public async Task<bool> SyncPlatformLogosAsync(Func<int, Task>? onProgress = null)
     {
         return await syncService.SyncAsync<PlatformLogo, GVPlatformLogo>(
             IGDBClient.Endpoints.PlatformLogos,
             "fields id,checksum,alpha_channel,animated,height,width,image_id,url; limit 500",
             MapToGVPlatformLogo,
             context => context.PlatformLogos,
-            igdbPlatformLogo => igdbPlatformLogo.Id ?? 0
+            igdbPlatformLogo => igdbPlatformLogo.Id ?? 0,
+            onProgress
         );
     }
 

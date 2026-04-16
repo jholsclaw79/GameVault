@@ -2,6 +2,7 @@ namespace GameVault.Data.IGDB;
 
 public class IGDBGameGraphSyncService(
     IGDBGameCoverService gameCoverService,
+    IGDBGameTypeService gameTypeService,
     IGDBGameService gameService,
     IGDBGameScreenshotService gameScreenshotService,
     IGDBGameVideoService gameVideoService,
@@ -16,6 +17,7 @@ public class IGDBGameGraphSyncService(
     public async Task<bool> SyncGameGraphAsync()
     {
         bool coversSynced = await gameCoverService.SyncGameCoversAsync();
+        bool gameTypesSynced = await gameTypeService.SyncGameTypesAsync();
         bool gamesSynced = await gameService.SyncGamesAsync();
         bool screenshotsSynced = await gameScreenshotService.SyncGameScreenshotsAsync();
         bool videosSynced = await gameVideoService.SyncGameVideosAsync();
@@ -28,6 +30,7 @@ public class IGDBGameGraphSyncService(
         bool videoLinksSynced = await gameVideoLinkService.SyncGameVideoLinksAsync();
 
         return coversSynced &&
+               gameTypesSynced &&
                gamesSynced &&
                screenshotsSynced &&
                videosSynced &&

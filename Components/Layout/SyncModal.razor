@@ -6,6 +6,9 @@
 @inject IGDBPlatformVersionService PlatformVersionService
 @inject IGDBPlatformVersionReleaseDateService PlatformVersionReleaseDateService
 @inject IGDBPlatformService PlatformService
+@inject IGDBCompanyService CompanyService
+@inject IGDBLanguageService LanguageService
+@inject IGDBGameTypeService GameTypeService
 @inject RetroAchievementsSyncService RetroAchievementsSyncService
 
 <MudDialog>
@@ -17,25 +20,15 @@
             <MudText Typo="Typo.h5" GutterBottom="true">Updating System Data</MudText>
 
             <MudProgressLinear Value="_progress" Class="my-4" />
-
-            <div Class="mt-6">
-                @foreach (var item in _syncItems)
+            <div Class="mt-6 d-flex align-center justify-space-between">
+                <MudText Typo="Typo.body1">@_currentItemName</MudText>
+                @if (_showSyncedCount)
                 {
-                    <div Class="d-flex align-center justify-space-between my-2">
-                        <MudText Typo="Typo.body2">@item.Name</MudText>
-                        @if (item.Status == SyncStatus.InProgress)
-                        {
-                            <MudProgressCircular Size="Size.Small" Indeterminate="true" />
-                        }
-                        else if (item.Status == SyncStatus.Completed)
-                        {
-                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" />
-                        }
-                        else if (item.Status == SyncStatus.Failed)
-                        {
-                            <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Small" />
-                        }
-                    </div>
+                    <MudChip T="string" Color="Color.Info" Variant="Variant.Outlined">@($"{_currentItemSynced:N0} synced")</MudChip>
+                }
+                else
+                {
+                    <MudChip T="string" Color="Color.Default" Variant="Variant.Outlined">Working...</MudChip>
                 }
             </div>
         }

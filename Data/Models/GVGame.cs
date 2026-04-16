@@ -27,6 +27,7 @@ public class GVGame : IIGDBSyncable
     public string? GameModesIdsJson { get; set; }
     public long? GameStatusIGDBId { get; set; }
     public long? GameTypeIGDBId { get; set; }
+    public GVGameType? GameType { get; set; }
     public int? Hypes { get; set; }
     public string? InvolvedCompaniesIdsJson { get; set; }
     public string? KeywordsIdsJson { get; set; }
@@ -60,6 +61,8 @@ public class GVGame : IIGDBSyncable
     public ICollection<GVGameDlc> DlcLinks { get; set; } = [];
     public ICollection<GVGameExpandedGame> ExpandedGameLinks { get; set; } = [];
     public ICollection<GVGameExpansion> ExpansionLinks { get; set; } = [];
+    public ICollection<GVInvolvedCompany> InvolvedCompanyLinks { get; set; } = [];
+    public ICollection<GVLanguageSupport> LanguageSupportLinks { get; set; } = [];
     public bool IsTracked { get; set; }
     public bool IsLocalOnly { get; set; }
     public bool IsCompleted { get; set; }

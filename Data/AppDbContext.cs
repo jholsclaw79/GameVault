@@ -17,6 +17,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<GVGameCover> GameCovers { get; set; }
     public DbSet<GVGameScreenshot> GameScreenshots { get; set; }
     public DbSet<GVGameVideo> GameVideos { get; set; }
+    public DbSet<GVCompany> Companies { get; set; }
+    public DbSet<GVLanguage> Languages { get; set; }
+    public DbSet<GVLanguageSupport> LanguageSupports { get; set; }
+    public DbSet<GVGameType> GameTypes { get; set; }
+    public DbSet<GVInvolvedCompany> InvolvedCompanies { get; set; }
     public DbSet<GVGenre> Genres { get; set; }
     public DbSet<GVGameGenre> GameGenres { get; set; }
     public DbSet<GVGameScreenshotLink> GameScreenshotLinks { get; set; }
@@ -218,6 +223,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasForeignKey(game => game.CoverIGDBId)
             .OnDelete(DeleteBehavior.SetNull);
 
+        modelBuilder.Entity<GVGame>()
+            .HasOne(game => game.GameType)
+            .WithMany()
+            .HasPrincipalKey(gameType => gameType.IGDBId)
+            .HasForeignKey(game => game.GameTypeIGDBId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         // Configure Game ROM
         modelBuilder.Entity<GVGameRom>()
             .HasKey(rom => rom.Id);
@@ -283,6 +295,76 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<GVGameVideo>()
             .HasIndex(video => video.IGDBId)
             .IsUnique();
+
+        // Configure Company
+        modelBuilder.Entity<GVCompany>()
+            .HasKey(company => company.Id);
+
+        modelBuilder.Entity<GVCompany>()
+            .HasIndex(company => company.IGDBId)
+            .IsUnique();
+
+        // Configure Language
+        modelBuilder.Entity<GVLanguage>()
+            .HasKey(language => language.Id);
+
+        modelBuilder.Entity<GVLanguage>()
+            .HasIndex(language => language.IGDBId)
+            .IsUnique();
+
+        // Configure GameType
+        modelBuilder.Entity<GVGameType>()
+            .HasKey(gameType => gameType.Id);
+
+        modelBuilder.Entity<GVGameType>()
+            .HasIndex(gameType => gameType.IGDBId)
+            .IsUnique();
+
+        // Configure InvolvedCompany
+        modelBuilder.Entity<GVInvolvedCompany>()
+            .HasKey(involvedCompany => involvedCompany.Id);
+
+        modelBuilder.Entity<GVInvolvedCompany>()
+            .HasIndex(involvedCompany => involvedCompany.IGDBId)
+            .IsUnique();
+
+        modelBuilder.Entity<GVInvolvedCompany>()
+            .HasIndex(involvedCompany => involvedCompany.GameIGDBId);
+
+        modelBuilder.Entity<GVInvolvedCompany>()
+            .HasOne(involvedCompany => involvedCompany.Game)
+            .WithMany(game => game.InvolvedCompanyLinks)
+            .HasPrincipalKey(game => game.IGDBId)
+            .HasForeignKey(involvedCompany => involvedCompany.GameIGDBId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Configure LanguageSupport
+        modelBuilder.Entity<GVLanguageSupport>()
+            .HasKey(languageSupport => languageSupport.Id);
+
+        modelBuilder.Entity<GVLanguageSupport>()
+            .HasIndex(languageSupport => languageSupport.IGDBId)
+            .IsUnique();
+
+        modelBuilder.Entity<GVLanguageSupport>()
+            .HasIndex(languageSupport => languageSupport.GameIGDBId);
+
+        modelBuilder.Entity<GVLanguageSupport>()
+            .HasIndex(languageSupport => languageSupport.LanguageIGDBId);
+
+        modelBuilder.Entity<GVLanguageSupport>()
+            .HasOne(languageSupport => languageSupport.Game)
+            .WithMany(game => game.LanguageSupportLinks)
+            .HasPrincipalKey(game => game.IGDBId)
+            .HasForeignKey(languageSupport => languageSupport.GameIGDBId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<GVLanguageSupport>()
+            .HasOne(languageSupport => languageSupport.Language)
+            .WithMany(language => language.GameLanguageSupports)
+            .HasPrincipalKey(language => language.IGDBId)
+            .HasForeignKey(languageSupport => languageSupport.LanguageIGDBId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         // Configure Genre
         modelBuilder.Entity<GVGenre>()
