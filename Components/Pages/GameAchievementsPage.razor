@@ -5,7 +5,7 @@
 @inject IDbContextFactory<AppDbContext> DbContextFactory
 @inject RetroAchievementsAchievementService RetroAchievementsAchievementService
 
-<PageTitle>@(DisplayGameName is null ? "Achievements" : $"{DisplayGameName} Achievements")</PageTitle>
+<PageTitle>@(string.IsNullOrWhiteSpace(GameName) ? "Achievements" : $"{GameName} - Achievements")</PageTitle>
 
 <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-3" Style="gap: 0.5rem; flex-wrap: wrap;">
     <MudText Typo="Typo.h4" GutterBottom="false">Achievements</MudText>

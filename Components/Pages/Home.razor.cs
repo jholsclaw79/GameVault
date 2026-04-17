@@ -39,6 +39,10 @@ public partial class Home
     private List<HomeGameCardItem> VisibleMatchedGameCards => ApplyFiltersAndSort(MatchedGameCards).ToList();
     private List<HomeGameCardItem> VisibleMissingGameCards => ApplyFiltersAndSort(MissingGameCards).ToList();
     private List<HomeGameCardItem> VisibleUnknownGameCards => ApplyFiltersAndSort(UnknownGameCards).ToList();
+    private bool CanSelectRandomMatchedGame => VisibleMatchedGameCards.Count > 0;
+
+    [Inject]
+    private NavigationManager NavigationManager { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
     {
@@ -389,6 +393,17 @@ public partial class Home
         SelectedLanguageIGDBId = null;
         SelectedSystemIGDBId = null;
         SortNameDescending = false;
+    }
+
+    private void OpenRandomMatchedGame()
+    {
+        if (!CanSelectRandomMatchedGame)
+        {
+            return;
+        }
+
+        HomeGameCardItem selectedGame = VisibleMatchedGameCards[Random.Shared.Next(VisibleMatchedGameCards.Count)];
+        NavigationManager.NavigateTo($"/games/{selectedGame.Game.Id}");
     }
 
     private static List<HomeGameCardItem> BuildCardItems(

@@ -114,6 +114,14 @@ else
                 <MudSelectItem T="bool" Value="@true">Descending</MudSelectItem>
             </MudSelect>
 
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Casino"
+                       OnClick="OpenRandomMatchedGame"
+                       Disabled="@(!CanSelectRandomMatchedGame)">
+                Random Matched Game
+            </MudButton>
+
             <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="ResetFiltersAndSort">
                 Reset
             </MudButton>
