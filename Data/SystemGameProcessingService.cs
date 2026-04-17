@@ -12,7 +12,9 @@ namespace GameVault.Data;
 public class SystemGameProcessingService(
     IDbContextFactory<AppDbContext> dbContextFactory,
     IGDBService igdbService,
-    HasheousLookupService hasheousLookupService)
+    HasheousLookupService hasheousLookupService,
+    IGDBInvolvedCompanyService involvedCompanyService,
+    IGDBLanguageSupportService languageSupportService)
 {
     private const int PageSize = 500;
     private const int ByIdChunkSize = 50;
@@ -506,6 +508,8 @@ public class SystemGameProcessingService(
         }
 
         await UpsertAssetsAsync(context, uniqueGames, cancellationToken, includeCovers: false);
+        await involvedCompanyService.SyncForGamesAsync(context, uniqueGames, cancellationToken);
+        await languageSupportService.SyncForGamesAsync(context, uniqueGames, cancellationToken);
         await UpsertLinksAsync(context, uniqueGames, cancellationToken);
     }
 

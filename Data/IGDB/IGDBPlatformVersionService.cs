@@ -7,14 +7,15 @@ namespace GameVault.Data.IGDB;
 
 public class IGDBPlatformVersionService(IGDBSyncService syncService)
 {
-    public async Task<bool> SyncPlatformVersionsAsync()
+    public async Task<bool> SyncPlatformVersionsAsync(Func<int, Task>? onProgress = null)
     {
         return await syncService.SyncAsync<PlatformVersion, GVPlatformVersion>(
             IGDBClient.Endpoints.PlatformVersions,
             "fields id,name,checksum,companies,connectivity,cpu,graphics,main_manufacturer,media,memory,os,output,platform_logo,platform_version_release_dates,resolutions,slug,sound,storage,summary,url; limit 500",
             MapToGVPlatformVersion,
             context => context.PlatformVersions,
-            igdbPlatformVersion => igdbPlatformVersion.Id ?? 0
+            igdbPlatformVersion => igdbPlatformVersion.Id ?? 0,
+            onProgress
         );
     }
 

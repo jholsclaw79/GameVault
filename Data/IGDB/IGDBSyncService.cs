@@ -21,7 +21,8 @@ public class IGDBSyncService(IDbContextFactory<AppDbContext> dbContextFactory, I
         string baseQuery,
         Func<TIGDBModel, TGVModel> mapToGVModel,
         Func<AppDbContext, IQueryable<TGVModel>> getDbSet,
-        Func<TIGDBModel, long> getIGDBId)
+        Func<TIGDBModel, long> getIGDBId,
+        Func<int, Task>? onProgress = null)
         where TIGDBModel : class
         where TGVModel : class, IIGDBSyncable
     {
@@ -72,6 +73,10 @@ public class IGDBSyncService(IDbContextFactory<AppDbContext> dbContextFactory, I
                 await context.SaveChangesAsync();
                 totalSynced += igdbModels.Length;
                 offset += PageSize;
+                if (onProgress != null)
+                {
+                    await onProgress(totalSynced);
+                }
 
                 Console.WriteLine($"Synced {totalSynced} {igdbEndpoint} records so far...");
 

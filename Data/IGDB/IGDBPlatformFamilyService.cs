@@ -6,14 +6,15 @@ namespace GameVault.Data.IGDB;
 
 public class IGDBPlatformFamilyService(IGDBSyncService syncService)
 {
-    public async Task<bool> SyncPlatformFamiliesAsync()
+    public async Task<bool> SyncPlatformFamiliesAsync(Func<int, Task>? onProgress = null)
     {
         return await syncService.SyncAsync<PlatformFamily, GVPlatformFamily>(
             IGDBClient.Endpoints.PlatformFamilies,
             "fields id,name,checksum,slug; limit 500",
             MapToGVPlatformFamily,
             context => context.PlatformFamilies,
-            igdbPlatformFamily => igdbPlatformFamily.Id ?? 0
+            igdbPlatformFamily => igdbPlatformFamily.Id ?? 0,
+            onProgress
         );
     }
 

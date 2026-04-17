@@ -1,7 +1,199 @@
 ﻿@page "/"
+@using GameVault.Data
+@using GameVault.Data.Models
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<AppDbContext> DbContextFactory
 
 <PageTitle>Home</PageTitle>
 
-<h1>Hello, world!</h1>
+<MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-3" Style="gap: 0.5rem; flex-wrap: wrap;">
+    <MudText Typo="Typo.h4" GutterBottom="false">GameVault</MudText>
+</MudStack>
 
-Welcome to your new app.
+@if (IsLoading)
+{
+    <MudProgressCircular Color="Color.Info" Indeterminate="true" Size="Size.Large" />
+}
+else if (!string.IsNullOrWhiteSpace(ErrorMessage))
+{
+    <MudAlert Severity="Severity.Warning" Dense="true">@ErrorMessage</MudAlert>
+}
+else
+{
+    <MudPaper Class="pa-4 mb-3">
+        <MudStack Row="true" AlignItems="AlignItems.End" Style="gap: 0.75rem; flex-wrap: wrap;">
+            <MudTextField T="string"
+                          Label="Name"
+                          @bind-Value="NameFilter"
+                          Clearable="true"
+                          Style="min-width: 220px;" />
+
+            <MudSelect T="long?"
+                       Label="Game Type"
+                       @bind-Value="SelectedGameTypeIGDBId"
+                       Dense="true"
+                       Clearable="true"
+                       Style="min-width: 180px;">
+                <MudSelectItem T="long?" Value="@UnknownFilterValue">Unknown</MudSelectItem>
+                @foreach (var option in GameTypeOptions)
+                {
+                    <MudSelectItem T="long?" Value="@option.Id">@option.Name</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudSelect T="long?"
+                       Label="Developer"
+                       @bind-Value="SelectedDeveloperCompanyIGDBId"
+                       Dense="true"
+                       Clearable="true"
+                       Style="min-width: 220px;">
+                <MudSelectItem T="long?" Value="@UnknownFilterValue">Unknown</MudSelectItem>
+                @foreach (var option in DeveloperCompanyOptions)
+                {
+                    <MudSelectItem T="long?" Value="@option.Id">@option.Name</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudSelect T="long?"
+                       Label="Publisher"
+                       @bind-Value="SelectedPublisherCompanyIGDBId"
+                       Dense="true"
+                       Clearable="true"
+                       Style="min-width: 220px;">
+                <MudSelectItem T="long?" Value="@UnknownFilterValue">Unknown</MudSelectItem>
+                @foreach (var option in PublisherCompanyOptions)
+                {
+                    <MudSelectItem T="long?" Value="@option.Id">@option.Name</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudSelect T="long?"
+                       Label="Genre"
+                       @bind-Value="SelectedGenreIGDBId"
+                       Dense="true"
+                       Clearable="true"
+                       Style="min-width: 180px;">
+                <MudSelectItem T="long?" Value="@UnknownFilterValue">Unknown</MudSelectItem>
+                @foreach (var option in GenreOptions)
+                {
+                    <MudSelectItem T="long?" Value="@option.Id">@option.Name</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudSelect T="long?"
+                       Label="Language"
+                       @bind-Value="SelectedLanguageIGDBId"
+                       Dense="true"
+                       Clearable="true"
+                       Style="min-width: 180px;">
+                <MudSelectItem T="long?" Value="@UnknownFilterValue">Unknown</MudSelectItem>
+                @foreach (var option in LanguageOptions)
+                {
+                    <MudSelectItem T="long?" Value="@option.Id">@option.Name</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudSelect T="long?"
+                       Label="System"
+                       @bind-Value="SelectedSystemIGDBId"
+                       Dense="true"
+                       Clearable="true"
+                       Style="min-width: 180px;">
+                @foreach (var option in SystemOptions)
+                {
+                    <MudSelectItem T="long?" Value="@option.Id">@option.Name</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudSelect T="bool"
+                       Label="Name Sort"
+                       @bind-Value="SortNameDescending"
+                       Dense="true"
+                       Style="min-width: 140px;">
+                <MudSelectItem T="bool" Value="@false">Ascending</MudSelectItem>
+                <MudSelectItem T="bool" Value="@true">Descending</MudSelectItem>
+            </MudSelect>
+
+            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="ResetFiltersAndSort">
+                Reset
+            </MudButton>
+        </MudStack>
+    </MudPaper>
+
+    <MudTabs Rounded="true" Elevation="1">
+        <MudTabPanel Text="@($"Matched ({VisibleMatchedGameCards.Count})")">
+            <MudAlert Severity="Severity.Info" Dense="true" Class="mb-2">
+                Verified games that exist in both the IGDB database and your library.
+            </MudAlert>
+            @if (!VisibleMatchedGameCards.Any())
+            {
+                <MudAlert Severity="Severity.Info" Dense="true">
+                    No matched games found.
+                </MudAlert>
+            }
+            else
+            {
+                <div class="games-grid">
+                    @foreach (var item in VisibleMatchedGameCards)
+                    {
+                        <div class="home-game-card-item" @key="@($"{item.GameIGDBId}:{item.PlatformIGDBId}")">
+                            <GameCard Game="item.Game"
+                                      AchievementsCompleted="@item.Game.RetroAchievementsCompletedAchievements"
+                                      AchievementsTotal="@item.Game.RetroAchievementsTotalAchievements" />
+                        </div>
+                    }
+                </div>
+            }
+        </MudTabPanel>
+
+        <MudTabPanel Text="@($"Missing ({VisibleMissingGameCards.Count})")">
+            <MudAlert Severity="Severity.Info" Dense="true" Class="mb-2">
+                Games found in IGDB based on your filters, but not currently in your collection.
+            </MudAlert>
+            @if (!VisibleMissingGameCards.Any())
+            {
+                <MudAlert Severity="Severity.Info" Dense="true">
+                    No missing games found.
+                </MudAlert>
+            }
+            else
+            {
+                <div class="games-grid">
+                    @foreach (var item in VisibleMissingGameCards)
+                    {
+                        <div class="home-game-card-item" @key="@($"{item.GameIGDBId}:{item.PlatformIGDBId}")">
+                            <GameCard Game="item.Game"
+                                      AchievementsCompleted="@item.Game.RetroAchievementsCompletedAchievements"
+                                      AchievementsTotal="@item.Game.RetroAchievementsTotalAchievements" />
+                        </div>
+                    }
+                </div>
+            }
+        </MudTabPanel>
+
+        <MudTabPanel Text="@($"Unknown ({VisibleUnknownGameCards.Count})")">
+            <MudAlert Severity="Severity.Info" Dense="true" Class="mb-2">
+                Local files or manual entries that couldn't be linked to an IGDB profile.
+            </MudAlert>
+            @if (!VisibleUnknownGameCards.Any())
+            {
+                <MudAlert Severity="Severity.Info" Dense="true">
+                    No unknown games found.
+                </MudAlert>
+            }
+            else
+            {
+                <div class="games-grid">
+                    @foreach (var item in VisibleUnknownGameCards)
+                    {
+                        <div class="home-game-card-item" @key="@($"{item.GameIGDBId}:{item.PlatformIGDBId}")">
+                            <GameCard Game="item.Game"
+                                      AchievementsCompleted="@item.Game.RetroAchievementsCompletedAchievements"
+                                      AchievementsTotal="@item.Game.RetroAchievementsTotalAchievements" />
+                        </div>
+                    }
+                </div>
+            }
+        </MudTabPanel>
+    </MudTabs>
+}

@@ -6,14 +6,15 @@ namespace GameVault.Data.IGDB;
 
 public class IGDBPlatformTypeService(IGDBSyncService syncService)
 {
-    public async Task<bool> SyncPlatformTypesAsync()
+    public async Task<bool> SyncPlatformTypesAsync(Func<int, Task>? onProgress = null)
     {
         return await syncService.SyncAsync<PlatformType, GVPlatformType>(
             IGDBClient.Endpoints.PlatformTypes,
             "fields id,name,checksum,created_at,updated_at; limit 500",
             MapToGVPlatformType,
             context => context.PlatformTypes,
-            igdbPlatform => igdbPlatform.Id ?? 0
+            igdbPlatform => igdbPlatform.Id ?? 0,
+            onProgress
         );
     }
 

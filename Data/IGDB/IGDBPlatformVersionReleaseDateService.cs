@@ -6,14 +6,15 @@ namespace GameVault.Data.IGDB;
 
 public class IGDBPlatformVersionReleaseDateService(IGDBSyncService syncService)
 {
-    public async Task<bool> SyncPlatformVersionReleaseDatesAsync()
+    public async Task<bool> SyncPlatformVersionReleaseDatesAsync(Func<int, Task>? onProgress = null)
     {
         return await syncService.SyncAsync<PlatformVersionReleaseDate, GVPlatformVersionReleaseDate>(
             IGDBClient.Endpoints.PlatformVersionReleaseDates,
             "fields id,checksum,created_at,date,date_format,human,m,platform_version,release_region,updated_at,y; limit 500",
             MapToGVPlatformVersionReleaseDate,
             context => context.PlatformVersionReleaseDates,
-            releaseDate => releaseDate.Id ?? 0
+            releaseDate => releaseDate.Id ?? 0,
+            onProgress
         );
     }
 
