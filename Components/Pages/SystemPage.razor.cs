@@ -27,6 +27,9 @@ public partial class SystemPage
     [Inject]
     private RetroAchievementsSyncService RetroAchievementsSyncService { get; set; } = default!;
 
+    [Inject]
+    private NavigationManager NavigationManager { get; set; } = default!;
+
     [Parameter]
     public long PlatformId { get; set; }
 
@@ -64,6 +67,7 @@ public partial class SystemPage
     private List<GVGame> VisibleMatchedGames => ApplyGameFiltersAndSort(MatchedGames).ToList();
     private List<GVGame> VisibleMissingGames => ApplyGameFiltersAndSort(MissingGames).ToList();
     private List<GVGame> VisibleUnknownGames => ApplyGameFiltersAndSort(UnknownGames).ToList();
+    private bool CanSelectRandomMatchedGame => VisibleMatchedGames.Count > 0;
     private bool HasSingleVersion => PlatformVersions.Count == 1;
     private bool HasMultipleVersions => PlatformVersions.Count > 1;
     private GVPlatformVersion? CurrentVersion =>
@@ -335,6 +339,17 @@ public partial class SystemPage
         SelectedGenreIGDBId = null;
         SelectedLanguageIGDBId = null;
         SortNameDescending = false;
+    }
+
+    private void OpenRandomMatchedGame()
+    {
+        if (!CanSelectRandomMatchedGame)
+        {
+            return;
+        }
+
+        GVGame selectedGame = VisibleMatchedGames[Random.Shared.Next(VisibleMatchedGames.Count)];
+        NavigationManager.NavigateTo($"/games/{selectedGame.Id}");
     }
 
     private async Task<List<GVPlatformVersion>> LoadPlatformVersionsAsync(AppDbContext context, long? platformIgdbId, string? versionsIdsJson)

@@ -4,7 +4,7 @@
 @using Microsoft.EntityFrameworkCore
 @inject IDbContextFactory<AppDbContext> DbContextFactory
 
-<PageTitle>System</PageTitle>
+<PageTitle>@(Platform?.Name ?? "System")</PageTitle>
 
 @if (IsLoading)
 {
@@ -308,6 +308,14 @@ else
                 <MudSelectItem T="bool" Value="@false">Ascending</MudSelectItem>
                 <MudSelectItem T="bool" Value="@true">Descending</MudSelectItem>
             </MudSelect>
+
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Casino"
+                       OnClick="OpenRandomMatchedGame"
+                       Disabled="@(!CanSelectRandomMatchedGame)">
+                Random Matched Game
+            </MudButton>
 
             <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="ResetGameFiltersAndSort">
                 Reset
