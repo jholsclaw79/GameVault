@@ -12,6 +12,8 @@ namespace GameVault.Components.Pages;
 public partial class SystemPage
 {
     private sealed record AchievementCardProgress(int CompletedAchievements, int TotalAchievements);
+    private sealed record FilterOption(long Id, string Name);
+    private const long UnknownFilterValue = -1;
 
     [Inject]
     private IDialogService DialogService { get; set; } = default!;
@@ -42,7 +44,26 @@ public partial class SystemPage
     private List<GVGame> MatchedGames { get; set; } = [];
     private List<GVGame> MissingGames { get; set; } = [];
     private List<GVGame> UnknownGames { get; set; } = [];
+    private Dictionary<long, HashSet<long>> GameDeveloperCompanyIdsByGameIgdbId { get; set; } = [];
+    private Dictionary<long, HashSet<long>> GamePublisherCompanyIdsByGameIgdbId { get; set; } = [];
+    private Dictionary<long, HashSet<long>> GameGenreIdsByGameIgdbId { get; set; } = [];
+    private Dictionary<long, HashSet<long>> GameLanguageIdsByGameIgdbId { get; set; } = [];
+    private List<FilterOption> GameTypeOptions { get; set; } = [];
+    private List<FilterOption> DeveloperCompanyOptions { get; set; } = [];
+    private List<FilterOption> PublisherCompanyOptions { get; set; } = [];
+    private List<FilterOption> GenreOptions { get; set; } = [];
+    private List<FilterOption> LanguageOptions { get; set; } = [];
+    private string NameFilter { get; set; } = string.Empty;
+    private long? SelectedGameTypeIGDBId { get; set; }
+    private long? SelectedDeveloperCompanyIGDBId { get; set; }
+    private long? SelectedPublisherCompanyIGDBId { get; set; }
+    private long? SelectedGenreIGDBId { get; set; }
+    private long? SelectedLanguageIGDBId { get; set; }
+    private bool SortNameDescending { get; set; }
     private Dictionary<long, AchievementCardProgress> AchievementProgressByGameId { get; set; } = [];
+    private List<GVGame> VisibleMatchedGames => ApplyGameFiltersAndSort(MatchedGames).ToList();
+    private List<GVGame> VisibleMissingGames => ApplyGameFiltersAndSort(MissingGames).ToList();
+    private List<GVGame> VisibleUnknownGames => ApplyGameFiltersAndSort(UnknownGames).ToList();
     private bool HasSingleVersion => PlatformVersions.Count == 1;
     private bool HasMultipleVersions => PlatformVersions.Count > 1;
     private GVPlatformVersion? CurrentVersion =>
@@ -74,6 +95,7 @@ public partial class SystemPage
 
         PlatformVersions = await LoadPlatformVersionsAsync(context, Platform?.IGDBId, Platform?.VersionsIdsJson);
         (MatchedGames, MissingGames, UnknownGames) = await LoadCategorizedPlatformGamesAsync(context, Platform?.IGDBId);
+        await BuildGameFilterMetadataAsync(context, [.. MatchedGames, .. MissingGames, .. UnknownGames]);
         AchievementProgressByGameId = await BuildAchievementProgressByGameIdAsync(context, Platform?.IGDBId, [.. MatchedGames, .. MissingGames, .. UnknownGames]);
         if (PlatformVersions.Count == 0)
         {
@@ -93,6 +115,226 @@ public partial class SystemPage
         CurrentProcessStep = null;
         CurrentProcessPercent = null;
         LastProcessSucceeded = true;
+    }
+
+    private async Task BuildGameFilterMetadataAsync(AppDbContext context, IReadOnlyCollection<GVGame> games)
+    {
+        List<long> gameIgdbIds = games
+            .Select(game => game.IGDBId)
+            .Where(id => id > 0)
+            .Distinct()
+            .ToList();
+
+        if (gameIgdbIds.Count == 0)
+        {
+            GameDeveloperCompanyIdsByGameIgdbId = [];
+            GamePublisherCompanyIdsByGameIgdbId = [];
+            GameGenreIdsByGameIgdbId = [];
+            GameLanguageIdsByGameIgdbId = [];
+            GameTypeOptions = [];
+            DeveloperCompanyOptions = [];
+            PublisherCompanyOptions = [];
+            GenreOptions = [];
+            LanguageOptions = [];
+            return;
+        }
+
+        List<(long GameId, long CompanyId, bool IsDeveloper, bool IsPublisher)> involvedCompanyRows = await context.InvolvedCompanies
+            .Where(link => gameIgdbIds.Contains(link.GameIGDBId) && link.CompanyIGDBId.HasValue)
+            .Select(link => new ValueTuple<long, long, bool, bool>(
+                link.GameIGDBId,
+                link.CompanyIGDBId!.Value,
+                link.Developer == true,
+                link.Publisher == true))
+            .ToListAsync();
+
+        Dictionary<long, HashSet<long>> developerByGame = [];
+        Dictionary<long, HashSet<long>> publisherByGame = [];
+        HashSet<long> developerCompanyIds = [];
+        HashSet<long> publisherCompanyIds = [];
+        foreach ((long gameId, long companyId, bool isDeveloper, bool isPublisher) in involvedCompanyRows)
+        {
+            if (isDeveloper)
+            {
+                developerCompanyIds.Add(companyId);
+                if (!developerByGame.TryGetValue(gameId, out HashSet<long>? developerSet))
+                {
+                    developerSet = [];
+                    developerByGame[gameId] = developerSet;
+                }
+                developerSet.Add(companyId);
+            }
+
+            if (isPublisher)
+            {
+                publisherCompanyIds.Add(companyId);
+                if (!publisherByGame.TryGetValue(gameId, out HashSet<long>? publisherSet))
+                {
+                    publisherSet = [];
+                    publisherByGame[gameId] = publisherSet;
+                }
+                publisherSet.Add(companyId);
+            }
+        }
+
+        List<(long GameId, long GenreId)> gameGenreRows = await context.GameGenres
+            .Where(link => gameIgdbIds.Contains(link.GameIGDBId))
+            .Select(link => new ValueTuple<long, long>(link.GameIGDBId, link.GenreIGDBId))
+            .ToListAsync();
+
+        Dictionary<long, HashSet<long>> genresByGame = [];
+        HashSet<long> genreIds = [];
+        foreach ((long gameId, long genreId) in gameGenreRows)
+        {
+            genreIds.Add(genreId);
+            if (!genresByGame.TryGetValue(gameId, out HashSet<long>? genreSet))
+            {
+                genreSet = [];
+                genresByGame[gameId] = genreSet;
+            }
+            genreSet.Add(genreId);
+        }
+
+        List<(long GameId, long LanguageId)> languageRows = await context.LanguageSupports
+            .Where(link => gameIgdbIds.Contains(link.GameIGDBId))
+            .Select(link => new ValueTuple<long, long>(link.GameIGDBId, link.LanguageIGDBId))
+            .ToListAsync();
+
+        Dictionary<long, HashSet<long>> languagesByGame = [];
+        HashSet<long> languageIds = [];
+        foreach ((long gameId, long languageId) in languageRows)
+        {
+            languageIds.Add(languageId);
+            if (!languagesByGame.TryGetValue(gameId, out HashSet<long>? languageSet))
+            {
+                languageSet = [];
+                languagesByGame[gameId] = languageSet;
+            }
+            languageSet.Add(languageId);
+        }
+
+        HashSet<long> gameTypeIds = games
+            .Select(game => game.GameTypeIGDBId)
+            .Where(id => id.HasValue)
+            .Select(id => id!.Value)
+            .ToHashSet();
+
+        GameTypeOptions = await context.GameTypes
+            .Where(gameType => gameTypeIds.Contains(gameType.IGDBId))
+            .OrderBy(gameType => gameType.Name)
+            .Select(gameType => new FilterOption(gameType.IGDBId, gameType.Name))
+            .ToListAsync();
+
+        DeveloperCompanyOptions = await context.Companies
+            .Where(company => developerCompanyIds.Contains(company.IGDBId))
+            .OrderBy(company => company.Name)
+            .Select(company => new FilterOption(company.IGDBId, company.Name))
+            .ToListAsync();
+
+        PublisherCompanyOptions = await context.Companies
+            .Where(company => publisherCompanyIds.Contains(company.IGDBId))
+            .OrderBy(company => company.Name)
+            .Select(company => new FilterOption(company.IGDBId, company.Name))
+            .ToListAsync();
+
+        GenreOptions = await context.Genres
+            .Where(genre => genreIds.Contains(genre.IGDBId))
+            .OrderBy(genre => genre.Name)
+            .Select(genre => new FilterOption(genre.IGDBId, genre.Name))
+            .ToListAsync();
+
+        LanguageOptions = await context.Languages
+            .Where(language => languageIds.Contains(language.IGDBId))
+            .OrderBy(language => language.Name)
+            .Select(language => new FilterOption(language.IGDBId, language.Name))
+            .ToListAsync();
+
+        GameDeveloperCompanyIdsByGameIgdbId = developerByGame;
+        GamePublisherCompanyIdsByGameIgdbId = publisherByGame;
+        GameGenreIdsByGameIgdbId = genresByGame;
+        GameLanguageIdsByGameIgdbId = languagesByGame;
+    }
+
+    private IEnumerable<GVGame> ApplyGameFiltersAndSort(IEnumerable<GVGame> source)
+    {
+        IEnumerable<GVGame> filtered = source;
+
+        if (!string.IsNullOrWhiteSpace(NameFilter))
+        {
+            string nameFilter = NameFilter.Trim();
+            filtered = filtered.Where(game => game.Name.Contains(nameFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (SelectedGameTypeIGDBId.HasValue)
+        {
+            long selectedGameTypeId = SelectedGameTypeIGDBId.Value;
+            filtered = selectedGameTypeId == UnknownFilterValue
+                ? filtered.Where(game => !game.GameTypeIGDBId.HasValue)
+                : filtered.Where(game => game.GameTypeIGDBId == selectedGameTypeId);
+        }
+
+        if (SelectedDeveloperCompanyIGDBId.HasValue)
+        {
+            long selectedDeveloperId = SelectedDeveloperCompanyIGDBId.Value;
+            filtered = selectedDeveloperId == UnknownFilterValue
+                ? filtered.Where(game =>
+                    !GameDeveloperCompanyIdsByGameIgdbId.TryGetValue(game.IGDBId, out HashSet<long>? developerIds) ||
+                    developerIds.Count == 0)
+                : filtered.Where(game =>
+                    GameDeveloperCompanyIdsByGameIgdbId.TryGetValue(game.IGDBId, out HashSet<long>? developerIds) &&
+                    developerIds.Contains(selectedDeveloperId));
+        }
+
+        if (SelectedPublisherCompanyIGDBId.HasValue)
+        {
+            long selectedPublisherId = SelectedPublisherCompanyIGDBId.Value;
+            filtered = selectedPublisherId == UnknownFilterValue
+                ? filtered.Where(game =>
+                    !GamePublisherCompanyIdsByGameIgdbId.TryGetValue(game.IGDBId, out HashSet<long>? publisherIds) ||
+                    publisherIds.Count == 0)
+                : filtered.Where(game =>
+                    GamePublisherCompanyIdsByGameIgdbId.TryGetValue(game.IGDBId, out HashSet<long>? publisherIds) &&
+                    publisherIds.Contains(selectedPublisherId));
+        }
+
+        if (SelectedGenreIGDBId.HasValue)
+        {
+            long selectedGenreId = SelectedGenreIGDBId.Value;
+            filtered = selectedGenreId == UnknownFilterValue
+                ? filtered.Where(game =>
+                    !GameGenreIdsByGameIgdbId.TryGetValue(game.IGDBId, out HashSet<long>? genreIds) ||
+                    genreIds.Count == 0)
+                : filtered.Where(game =>
+                    GameGenreIdsByGameIgdbId.TryGetValue(game.IGDBId, out HashSet<long>? genreIds) &&
+                    genreIds.Contains(selectedGenreId));
+        }
+
+        if (SelectedLanguageIGDBId.HasValue)
+        {
+            long selectedLanguageId = SelectedLanguageIGDBId.Value;
+            filtered = selectedLanguageId == UnknownFilterValue
+                ? filtered.Where(game =>
+                    !GameLanguageIdsByGameIgdbId.TryGetValue(game.IGDBId, out HashSet<long>? languageIds) ||
+                    languageIds.Count == 0)
+                : filtered.Where(game =>
+                    GameLanguageIdsByGameIgdbId.TryGetValue(game.IGDBId, out HashSet<long>? languageIds) &&
+                    languageIds.Contains(selectedLanguageId));
+        }
+
+        return SortNameDescending
+            ? filtered.OrderByDescending(game => game.Name).ThenBy(game => game.IGDBId)
+            : filtered.OrderBy(game => game.Name).ThenBy(game => game.IGDBId);
+    }
+
+    private void ResetGameFiltersAndSort()
+    {
+        NameFilter = string.Empty;
+        SelectedGameTypeIGDBId = null;
+        SelectedDeveloperCompanyIGDBId = null;
+        SelectedPublisherCompanyIGDBId = null;
+        SelectedGenreIGDBId = null;
+        SelectedLanguageIGDBId = null;
+        SortNameDescending = false;
     }
 
     private async Task<List<GVPlatformVersion>> LoadPlatformVersionsAsync(AppDbContext context, long? platformIgdbId, string? versionsIdsJson)
@@ -465,6 +707,7 @@ public partial class SystemPage
             {
                 using AppDbContext context = await DbContextFactory.CreateDbContextAsync();
                 (MatchedGames, MissingGames, UnknownGames) = await LoadCategorizedPlatformGamesAsync(context, Platform.IGDBId);
+                await BuildGameFilterMetadataAsync(context, [.. MatchedGames, .. MissingGames, .. UnknownGames]);
                 AchievementProgressByGameId = await BuildAchievementProgressByGameIdAsync(context, Platform.IGDBId, [.. MatchedGames, .. MissingGames, .. UnknownGames]);
             }
 
@@ -509,6 +752,7 @@ public partial class SystemPage
 
             using AppDbContext context = await DbContextFactory.CreateDbContextAsync();
             (MatchedGames, MissingGames, UnknownGames) = await LoadCategorizedPlatformGamesAsync(context, Platform.IGDBId);
+            await BuildGameFilterMetadataAsync(context, [.. MatchedGames, .. MissingGames, .. UnknownGames]);
             AchievementProgressByGameId = await BuildAchievementProgressByGameIdAsync(context, Platform.IGDBId, [.. MatchedGames, .. MissingGames, .. UnknownGames]);
 
             if (success)
