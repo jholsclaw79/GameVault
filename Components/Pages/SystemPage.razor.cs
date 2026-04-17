@@ -67,6 +67,7 @@ public partial class SystemPage
     private List<GVGame> VisibleMatchedGames => ApplyGameFiltersAndSort(MatchedGames).ToList();
     private List<GVGame> VisibleMissingGames => ApplyGameFiltersAndSort(MissingGames).ToList();
     private List<GVGame> VisibleUnknownGames => ApplyGameFiltersAndSort(UnknownGames).ToList();
+    private bool HasAnyGames => MatchedGames.Count > 0 || MissingGames.Count > 0 || UnknownGames.Count > 0;
     private bool CanSelectRandomMatchedGame => VisibleMatchedGames.Count > 0;
     private bool HasSingleVersion => PlatformVersions.Count == 1;
     private bool HasMultipleVersions => PlatformVersions.Count > 1;

@@ -39,6 +39,7 @@ public partial class Home
     private List<HomeGameCardItem> VisibleMatchedGameCards => ApplyFiltersAndSort(MatchedGameCards).ToList();
     private List<HomeGameCardItem> VisibleMissingGameCards => ApplyFiltersAndSort(MissingGameCards).ToList();
     private List<HomeGameCardItem> VisibleUnknownGameCards => ApplyFiltersAndSort(UnknownGameCards).ToList();
+    private bool HasAnyGames => MatchedGameCards.Count > 0 || MissingGameCards.Count > 0 || UnknownGameCards.Count > 0;
     private bool CanSelectRandomMatchedGame => VisibleMatchedGameCards.Count > 0;
 
     [Inject]

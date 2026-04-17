@@ -227,101 +227,104 @@ else
     }
 
     <MudText Typo="Typo.h5" GutterBottom="true" Class="mt-4">Games</MudText>
-    <MudPaper Class="pa-4 mb-3">
-        <MudStack Row="true" AlignItems="AlignItems.End" Style="gap: 0.75rem; flex-wrap: wrap;">
-            <MudTextField T="string"
-                          Label="Name"
-                          @bind-Value="NameFilter"
-                          Clearable="true"
-                          Style="min-width: 220px;" />
+    @if (HasAnyGames)
+    {
+        <MudPaper Class="pa-4 mb-3">
+            <MudStack Row="true" AlignItems="AlignItems.End" Style="gap: 0.75rem; flex-wrap: wrap;">
+                <MudTextField T="string"
+                              Label="Name"
+                              @bind-Value="NameFilter"
+                              Clearable="true"
+                              Style="min-width: 220px;" />
 
-            <MudSelect T="long?"
-                       Label="Game Type"
-                       @bind-Value="SelectedGameTypeIGDBId"
-                       Dense="true"
-                       Clearable="true"
-                       Style="min-width: 180px;">
-                <MudSelectItem T="long?" Value="@UnknownFilterValue">Unknown</MudSelectItem>
-                @foreach (var option in GameTypeOptions)
-                {
-                    <MudSelectItem T="long?" Value="@option.Id">@option.Name</MudSelectItem>
-                }
-            </MudSelect>
+                <MudSelect T="long?"
+                           Label="Game Type"
+                           @bind-Value="SelectedGameTypeIGDBId"
+                           Dense="true"
+                           Clearable="true"
+                           Style="min-width: 180px;">
+                    <MudSelectItem T="long?" Value="@UnknownFilterValue">Unknown</MudSelectItem>
+                    @foreach (var option in GameTypeOptions)
+                    {
+                        <MudSelectItem T="long?" Value="@option.Id">@option.Name</MudSelectItem>
+                    }
+                </MudSelect>
 
-            <MudSelect T="long?"
-                       Label="Developer"
-                       @bind-Value="SelectedDeveloperCompanyIGDBId"
-                       Dense="true"
-                       Clearable="true"
-                       Style="min-width: 220px;">
-                <MudSelectItem T="long?" Value="@UnknownFilterValue">Unknown</MudSelectItem>
-                @foreach (var option in DeveloperCompanyOptions)
-                {
-                    <MudSelectItem T="long?" Value="@option.Id">@option.Name</MudSelectItem>
-                }
-            </MudSelect>
+                <MudSelect T="long?"
+                           Label="Developer"
+                           @bind-Value="SelectedDeveloperCompanyIGDBId"
+                           Dense="true"
+                           Clearable="true"
+                           Style="min-width: 220px;">
+                    <MudSelectItem T="long?" Value="@UnknownFilterValue">Unknown</MudSelectItem>
+                    @foreach (var option in DeveloperCompanyOptions)
+                    {
+                        <MudSelectItem T="long?" Value="@option.Id">@option.Name</MudSelectItem>
+                    }
+                </MudSelect>
 
-            <MudSelect T="long?"
-                       Label="Publisher"
-                       @bind-Value="SelectedPublisherCompanyIGDBId"
-                       Dense="true"
-                       Clearable="true"
-                       Style="min-width: 220px;">
-                <MudSelectItem T="long?" Value="@UnknownFilterValue">Unknown</MudSelectItem>
-                @foreach (var option in PublisherCompanyOptions)
-                {
-                    <MudSelectItem T="long?" Value="@option.Id">@option.Name</MudSelectItem>
-                }
-            </MudSelect>
+                <MudSelect T="long?"
+                           Label="Publisher"
+                           @bind-Value="SelectedPublisherCompanyIGDBId"
+                           Dense="true"
+                           Clearable="true"
+                           Style="min-width: 220px;">
+                    <MudSelectItem T="long?" Value="@UnknownFilterValue">Unknown</MudSelectItem>
+                    @foreach (var option in PublisherCompanyOptions)
+                    {
+                        <MudSelectItem T="long?" Value="@option.Id">@option.Name</MudSelectItem>
+                    }
+                </MudSelect>
 
-            <MudSelect T="long?"
-                       Label="Genre"
-                       @bind-Value="SelectedGenreIGDBId"
-                       Dense="true"
-                       Clearable="true"
-                       Style="min-width: 180px;">
-                <MudSelectItem T="long?" Value="@UnknownFilterValue">Unknown</MudSelectItem>
-                @foreach (var option in GenreOptions)
-                {
-                    <MudSelectItem T="long?" Value="@option.Id">@option.Name</MudSelectItem>
-                }
-            </MudSelect>
+                <MudSelect T="long?"
+                           Label="Genre"
+                           @bind-Value="SelectedGenreIGDBId"
+                           Dense="true"
+                           Clearable="true"
+                           Style="min-width: 180px;">
+                    <MudSelectItem T="long?" Value="@UnknownFilterValue">Unknown</MudSelectItem>
+                    @foreach (var option in GenreOptions)
+                    {
+                        <MudSelectItem T="long?" Value="@option.Id">@option.Name</MudSelectItem>
+                    }
+                </MudSelect>
 
-            <MudSelect T="long?"
-                       Label="Language"
-                       @bind-Value="SelectedLanguageIGDBId"
-                       Dense="true"
-                       Clearable="true"
-                       Style="min-width: 180px;">
-                <MudSelectItem T="long?" Value="@UnknownFilterValue">Unknown</MudSelectItem>
-                @foreach (var option in LanguageOptions)
-                {
-                    <MudSelectItem T="long?" Value="@option.Id">@option.Name</MudSelectItem>
-                }
-            </MudSelect>
+                <MudSelect T="long?"
+                           Label="Language"
+                           @bind-Value="SelectedLanguageIGDBId"
+                           Dense="true"
+                           Clearable="true"
+                           Style="min-width: 180px;">
+                    <MudSelectItem T="long?" Value="@UnknownFilterValue">Unknown</MudSelectItem>
+                    @foreach (var option in LanguageOptions)
+                    {
+                        <MudSelectItem T="long?" Value="@option.Id">@option.Name</MudSelectItem>
+                    }
+                </MudSelect>
 
-            <MudSelect T="bool"
-                       Label="Name Sort"
-                       @bind-Value="SortNameDescending"
-                       Dense="true"
-                       Style="min-width: 140px;">
-                <MudSelectItem T="bool" Value="@false">Ascending</MudSelectItem>
-                <MudSelectItem T="bool" Value="@true">Descending</MudSelectItem>
-            </MudSelect>
+                <MudSelect T="bool"
+                           Label="Name Sort"
+                           @bind-Value="SortNameDescending"
+                           Dense="true"
+                           Style="min-width: 140px;">
+                    <MudSelectItem T="bool" Value="@false">Ascending</MudSelectItem>
+                    <MudSelectItem T="bool" Value="@true">Descending</MudSelectItem>
+                </MudSelect>
 
-            <MudButton Variant="Variant.Filled"
-                       Color="Color.Primary"
-                       StartIcon="@Icons.Material.Filled.Casino"
-                       OnClick="OpenRandomMatchedGame"
-                       Disabled="@(!CanSelectRandomMatchedGame)">
-                Random Matched Game
-            </MudButton>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Casino"
+                           OnClick="OpenRandomMatchedGame"
+                           Disabled="@(!CanSelectRandomMatchedGame)">
+                    Random Matched Game
+                </MudButton>
 
-            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="ResetGameFiltersAndSort">
-                Reset
-            </MudButton>
-        </MudStack>
-    </MudPaper>
+                <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="ResetGameFiltersAndSort">
+                    Reset
+                </MudButton>
+            </MudStack>
+        </MudPaper>
+    }
     <MudTabs Rounded="true" Elevation="1">
         <MudTabPanel Text="@($"Matched ({VisibleMatchedGames.Count})")">
             <MudAlert Severity="Severity.Info" Dense="true" Class="mb-2">
