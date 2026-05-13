@@ -17,16 +17,17 @@ Replace the placeholders with your actual credentials and paths.
 docker run -d \
   --name GameVault \
   -p 8765:80 \
-  -v "Your Rom Path Location":/app/roms \
-  -e IGDB_CLIENT_ID="your_client_id" \
-  -e IGDB_CLIENT_SECRET="your_client_secret" \
-  -e RA_USERNAME="your_retroachievements_username" \
-  -e RA_WEB_API_KEY="your_retroachievements_web_api_key" \
-  -e MYSQL_USER="admin" \
-  -e MYSQL_PASSWORD="your_password" \
-  -e MYSQL_URL="192.168.1.x" \
-  -e MYSQL_PORT="3306" \
-  -e MYSQL_DB_NAME="app_database" \
+  -v 'Your Rom Path Location':/app/roms:rw \
+  -e IGDB_CLIENT_ID='your_client_id' \
+  -e IGDB_CLIENT_SECRET='your_client_secret' \
+  -e RA_USERNAME='your_retroachievements_username' \
+  -e RA_WEB_API_KEY='your_retroachievements_web_api_key' \
+  -e 'PLAYMATCH_API_URL'='https://playmatch.retrorealm.dev' \
+  -e MYSQL_USER='admin' \
+  -e MYSQL_PASSWORD='your_password' \
+  -e MYSQL_URL='192.168.1.x' \
+  -e MYSQL_PORT='3306' \
+  -e MYSQL_DB_NAME='app_database' \
   jholsclaw79/gamevault:main
 ```
 
