@@ -22,7 +22,7 @@ docker run -d \
   -e IGDB_CLIENT_SECRET='your_client_secret' \
   -e RA_USERNAME='your_retroachievements_username' \
   -e RA_WEB_API_KEY='your_retroachievements_web_api_key' \
-  -e 'PLAYMATCH_API_URL'='https://playmatch.retrorealm.dev' \
+  -e PLAYMATCH_API_URL='https://playmatch.retrorealm.dev' \
   -e MYSQL_USER='admin' \
   -e MYSQL_PASSWORD='your_password' \
   -e MYSQL_URL='192.168.1.x' \
